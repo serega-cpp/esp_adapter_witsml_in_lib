@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Adapter type="input"
+  id="witsml_in"
+  label="WITSML Input (Custom)"
+  descr="WITSML Custom Input Adapter"
+>
+  <Library file="witsml_in" type="binary"/>
+  <Special>
+  </Special>
+  <Section>
+    <Parameter id="ListenPort"
+      label="ListenPort"
+      descr="On which port waiting for connection from cvs stream generators"
+      type="uint"
+      use="required"
+      default="12345"/>
+    <Parameter id="CsvDelimiter"
+      label="CsvDelimiter"
+      descr="Symbol used to separate the columns"
+      type="string"
+      use="advanced"
+      default=";"/>
+  </Section>
+</Adapter>
