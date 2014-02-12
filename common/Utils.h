@@ -73,6 +73,8 @@ namespace Utils
 	///////////////////////////////////////////////////////////////////////////////
 	const char *ExtractFileName(const char *full_path);
 
+	unsigned short int Crc16(const unsigned char *block, size_t len);
+
 	char * itoa(int val, char *buf, int base);
 	int strcmpi(const char *s1, const char *s2);
 

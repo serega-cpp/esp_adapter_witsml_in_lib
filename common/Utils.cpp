@@ -215,6 +215,21 @@ namespace Utils
 		return full_path; // seems the full_path is actually an executable file name
 	}
 
+	unsigned short Crc16(const unsigned char *block, size_t len)
+	{
+		// Name  : CRC-16 CCITT
+		// Poly  : 0x1021    x^16 + x^12 + x^5 + 1
+		unsigned short crc = 0xFFFF;
+ 
+		while (len--) {
+			crc ^= *block++ << 8;
+ 			for (int i = 0; i < 8; i++)
+				crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+		}
+ 
+		return crc;
+	}
+
 	char * itoa(int val, char *buf, int base)
 	{
 		char internal_buf[32] = { 0 };
