@@ -5,7 +5,7 @@
 
 void LogMessage3(const char *message)
 {
-	// return;
+	return;
 
 #ifdef _WIN32
 	const char *log_file = "c:\\temp\\esp_adapter_dll_main.log";
