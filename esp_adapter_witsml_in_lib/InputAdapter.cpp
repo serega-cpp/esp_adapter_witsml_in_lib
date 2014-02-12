@@ -162,6 +162,7 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 				if (!traverse_xml(root_it, std::pair<std::string, std::string>(), tables))
 					continue;
 
+				// get UID from the hard-coded position
 				assert(!tables.empty());
 				std::string uid(tables[0].at(0).second);
 
@@ -170,21 +171,103 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 				// so PRIMARY KEY is (uid; uid_salt)
 				unsigned int uid_salt = 1;
 
+				std::string log_NameWell;
+				std::string log_NameWellbore;
+				std::string logHeader_UomNamingSystem;
+				std::string commonData_NameSource;
+				std::vector<LogCurveInfoRec> logCurveInfo;
+				std::vector<std::string> logData;
+
 				for (std::vector<TableData>::iterator table_it = tables.begin(); table_it != tables.end(); ++table_it) {
 					std::string group(table_it->GetName());
-
 					logMessage(group.c_str());
-					for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+
+					// array variables
+					if (Utils::strcmpi(group.c_str(), "logCurveInfo") == 0) {	// columns
+
+						unsigned int columnIndex;
+						std::string mnemonic;
+						std::string	mnemAlias;
+						std::string curveDescription;
+						std::string	startIndex;
+						std::string	endIndex;
+
+						for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+							if (Utils::strcmpi(row_it->first.c_str(), "columnIndex") == 0) columnIndex = atoi(row_it->second.c_str());
+							else if (Utils::strcmpi(row_it->first.c_str(), "startIndex") == 0) startIndex.assign(row_it->second);
+							else if (Utils::strcmpi(row_it->first.c_str(), "endIndex") == 0) endIndex.assign(row_it->second);
+							else if (Utils::strcmpi(row_it->first.c_str(), "mnemAlias") == 0) mnemAlias.assign(row_it->second);
+							else if (Utils::strcmpi(row_it->first.c_str(), "curveDescription") == 0) curveDescription.assign(row_it->second);
+							else if (Utils::strcmpi(row_it->first.c_str(), "mnemonic") == 0) mnemonic.assign(row_it->second);
+						}
 						
+						char ci_str[16];
+						sprintf(ci_str, "_%d", columnIndex);
+						std::string	hash2 = hash(mnemonic).append(ci_str);
+
+						LogCurveInfoRec rec(hash2, columnIndex, mnemAlias.append(curveDescription), startIndex, endIndex);
+						logCurveInfo.push_back(rec);
+					}
+					else if (Utils::strcmpi(group.c_str(), "logData") == 0) {	// rows
+						for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+							logData.push_back(row_it->second);
+						}
+					}
+					// scalar variables
+					else if (Utils::strcmpi(group.c_str(), "log") == 0) {
+						for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+							if (Utils::strcmpi(row_it->first.c_str(), "NameWell") == 0) log_NameWell.assign(row_it->second);
+							else if (Utils::strcmpi(row_it->first.c_str(), "NameWellbore") == 0) log_NameWellbore.assign(row_it->second);
+						}
+					}
+					else if (Utils::strcmpi(group.c_str(), "logHeader") == 0) {
+						for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+							if (Utils::strcmpi(row_it->first.c_str(), "UomNamingSystem") == 0) logHeader_UomNamingSystem.assign(row_it->second);
+						}
+					}
+					else if (Utils::strcmpi(group.c_str(), "commonData") == 0) {
+						for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+							if (Utils::strcmpi(row_it->first.c_str(), "NameSource") == 0) commonData_NameSource.assign(row_it->second);
+						}
+					}
+				}
+
+				if (logCurveInfo.empty())
+					continue;
+
+				std::string hash1 = hash(log_NameWell, log_NameWellbore, logHeader_UomNamingSystem, commonData_NameSource);
+
+				std::vector<std::string> fieldsData;
+				for (std::vector<std::string>::const_iterator data_it = logData.begin(); data_it != logData.end(); ++data_it) {
+
+					fieldsData.clear();
+					Utils::SplitCsv(*data_it, ',', fieldsData);
+					if (fieldsData.size() < logCurveInfo.size())
+						continue;
+
+					for (std::vector<LogCurveInfoRec>::const_iterator info_it = logCurveInfo.begin() + 1; info_it != logCurveInfo.end(); ++info_it) {
+
 						std::stringstream csv_row;
-						csv_row << uid << ";" << uid_salt++ << ";" << group << ";" << row_it->first << ";" << row_it->second << std::endl;
+						csv_row << fieldsData[0] << ";"
+								<< hash1 << info_it->hash2 << ";" 
+								<< fieldsData[info_it->uint_columnIndex] << ";" 
+								<< info_it->uint_columnIndex << ";"
+								<< info_it->text_columnIndex << ";" 
+								<< info_it->startIndex << ";" 
+								<< info_it->endIndex << ";" 
+								<< log_NameWell << ";" 
+								<< log_NameWellbore << ";" 
+								<< logHeader_UomNamingSystem << ";" 
+								<< commonData_NameSource << ";" 
+								<< hash1 << std::endl;
 
 						_msgQueue.Push(new std::string(csv_row.str()));
 					}
 				}
-			}
-		}
-	}
+
+			} // for (root_it = root->children().begin(); root_it != root->children().end(); ++root_it)
+		} // for (xml_msg = xml_buffer.GetNextMessage())
+	} // while (received = client->Recv(buf))
 
 	logMessage("client_fn completed");
 }

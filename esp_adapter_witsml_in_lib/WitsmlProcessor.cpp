@@ -1,5 +1,6 @@
 #include "WitsmlProcessor.h"
 #include <string.h>
+#include <iomanip>
 
 void process_raw_child(const char *root_name, const std::pair<std::string, std::string> &uid, const std::pair<std::string, std::string> &child, std::vector<TableData> &tables)
 {
@@ -59,4 +60,21 @@ bool traverse_xml(pugi::xml_node_iterator root_it, std::pair<std::string, std::s
 	tables.push_back(active_table);
 
 	return true;
+}
+
+std::string hash(const std::string &s1, const std::string &s2)
+{
+	unsigned short int crc1 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s1.c_str()), s1.length());
+	unsigned short int crc2 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s2.c_str()), s2.length());
+
+	std::stringstream ss;
+	if (s2.empty()) ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1;
+	else ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1 << crc2;
+
+	return ss.str();
+}
+
+std::string hash(const std::string &s1, const std::string &s2, const std::string &s3, const std::string &s4)
+{
+	return hash(s1, s2) + hash(s3, s4);
 }
