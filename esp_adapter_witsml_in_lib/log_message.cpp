@@ -14,6 +14,8 @@
 
 bool log_message(const char *class_name, const char *format_str, ...)
 {
+	return true;
+
 	va_list arg;
 	va_start(arg, format_str);
 
