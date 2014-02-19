@@ -24,6 +24,7 @@
     <None Include="ReadMe.txt" />
     <None Include="witsml_in.cnxml" />
     <None Include="witsml_in.ccl" />
+    <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="esp_adapter_witsml_in_lib.cpp">
@@ -54,6 +55,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cqueue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="log_message.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,6 +96,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cqueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="log_message.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
