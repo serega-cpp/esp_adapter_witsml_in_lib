@@ -77,9 +77,12 @@ int main(int argc, char *argv[])
 
 	clock_t c2 = clock();
 
-	std::cerr << "Completed! (" << double(c2 - c1) / CLOCKS_PER_SEC << " sec, " 
+	if (c1 == -1 || (c1 == 0 && c2 == 0))
+		std::cerr << "Completed! (performance statistics not available on platform)" << std::endl;
+	else 
+		std::cerr << "Completed! (" << double(c2 - c1) / CLOCKS_PER_SEC << " sec, " 
 								<< total_bytes << " bytes, " 
-								<< total_bytes / (double(c2 - c1) / CLOCKS_PER_SEC) << " bytes/sec)" 
+								<< (double)total_bytes / (double(c2 - c1) / CLOCKS_PER_SEC) << " bytes/sec)" 
 								<< std::endl;
 
 	return 0;
