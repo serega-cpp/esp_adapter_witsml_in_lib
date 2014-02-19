@@ -146,6 +146,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="Makefile" />
     <None Include="ReadMe.txt" />
     <None Include="witsml_in.ccl" />
     <None Include="witsml_in.cnxml">
@@ -174,6 +175,7 @@
     </ClCompile>
     <ClCompile Include="esp_adapter_witsml_in_lib.cpp" />
     <ClCompile Include="InputAdapter.cpp" />
+    <ClCompile Include="log_message.cpp" />
     <ClCompile Include="TextMessageBuffer.cpp" />
     <ClCompile Include="WitsmlProcessor.cpp" />
   </ItemGroup>
@@ -187,6 +189,7 @@
     <ClInclude Include="..\pugixml\pugixml.hpp" />
     <ClInclude Include="cqueue.h" />
     <ClInclude Include="InputAdapter.h" />
+    <ClInclude Include="log_message.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="TextMessageBuffer.h" />
     <ClInclude Include="WitsmlProcessor.h" />

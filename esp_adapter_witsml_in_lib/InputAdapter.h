@@ -14,7 +14,7 @@
 
 struct InputAdapter
 {
-    InputAdapter();
+    InputAdapter(char csvDelimiter);
 
 	bool start(short int port);			//!< tell adapter to start
 	void stop();						//!< commands adapter to stop
@@ -23,8 +23,6 @@ struct InputAdapter
     void setState(int st);
     bool discoverTables();
     bool discover(std::string tableName);
-
-	void logMessage(const char *message);
 
     void* connectionCallBackReference;
     void* schemaInformation;

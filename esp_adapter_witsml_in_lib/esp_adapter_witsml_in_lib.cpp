@@ -7,22 +7,7 @@
 #include <iostream>
 
 #include "common/Utils.h"
-
-void LogMessage(const char *message)
-{
-	return;
-
-#ifdef _WIN32
-	const char *log_file = "c:\\temp\\esp_adapter_witsml_in_lib.log";
-#else
-	const char *log_file = "/home/serega/esp_adapter_witsml_in_lib.log";
-#endif
-
-	FILE *f = fopen(log_file, "at");
-	fputs(message, f); 
-	fputs("\n", f);
-	fclose(f);
-}
+#include "log_message.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Adapter API
@@ -37,15 +22,15 @@ calls to the adapter.
 extern "C" DLLEXPORT
 void* createAdapter()
 {
-	LogMessage("createAdapter");
+	log_message("DllExport", "createAdapter");
 
-    return new InputAdapter();
+    return new InputAdapter(';');
 }
 
 extern "C" DLLEXPORT
 void deleteAdapter(void* adapter)
 {
-	LogMessage("deleteAdapter");
+	log_message("DllExport", "deleteAdapter");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     delete inputAdapterObject;
@@ -59,7 +44,7 @@ side. Use this handle as a parameter when making callbacks to the Server.
 extern "C" DLLEXPORT
 void setCallBackReference(void *adapter,void *connectionCallBackReference)
 {
-	LogMessage("setCallBackReference");
+	log_message("DllExport", "setCallBackReference");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     inputAdapterObject->connectionCallBackReference = connectionCallBackReference;
@@ -70,9 +55,9 @@ The Server calls this API to provide the adapter
 implementation with information related to schema.
 */
 extern "C" DLLEXPORT
-void setConnectionRowType(void *adapter,void *connectionRowType)
+void setConnectionRowType(void *adapter, void *connectionRowType)
 {
-	LogMessage("setConnectionRowType");
+	log_message("DllExport", "setConnectionRowType");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     inputAdapterObject->schemaInformation = connectionRowType;
@@ -86,7 +71,7 @@ parameters.
 extern "C" DLLEXPORT
 void  setConnectionParams(void* adapter,void* connectionParams)
 {
-	LogMessage("setConnectionParams");
+	log_message("DllExport", "setConnectionParams");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     inputAdapterObject->parameters = connectionParams;
@@ -100,7 +85,7 @@ utility library provides data conversion functions.
 extern "C" DLLEXPORT
 void* getNext(void *adapter)
 {
-	LogMessage("getNext");
+	log_message("DllExport", "getNext");
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
 	
 	// Process the Stop signal
@@ -112,25 +97,27 @@ void* getNext(void *adapter)
 	// Get the new message from internal Queue
 	std::auto_ptr<std::string> s;
 	if (!inputAdapterObject->_msgQueue.Pop(s)) {
-		LogMessage("getNext::Waiting for Msg");
+		log_message("DllExport", "getNext::Waiting for Msg...");
 		if (!inputAdapterObject->_msgQueue.WaitForMsg()) {
-			LogMessage("getNext::Waiting failed");
+			log_message("DllExport", "getNext::Waiting failed");
 			return NULL;
 		}
 		if (!inputAdapterObject->_msgQueue.Pop(s)) {
-			LogMessage("getNext::Pop failed");
+			log_message("DllExport", "getNext::Pop failed");
 			return NULL;
 		}
 	}
 	
+	// log_message("DllExport", "MSG: %s", s.get()->c_str());
+
 	// Split message (csv string into separate items)
-	LogMessage("getNext::Waiting completed");
+	log_message("DllExport", "getNext::Waiting completed");
 	int cols_cnt = inputAdapterObject->getColumnCount();
 	std::vector<std::string> fields;
 	fields.reserve(cols_cnt);
 	Utils::SplitCsv(*s.get(), inputAdapterObject->_csvDelimiter, fields);
 	if (cols_cnt != fields.size()) {
-		LogMessage("getNext::Wrong columns count");
+		log_message("DllExport", "getNext::Wrong columns count (esp_expect:%d vs csv:%d", cols_cnt, fields.size());
 		return NULL;
 	}
 
@@ -156,13 +143,13 @@ This is the first life cycle API. Call this API to initialize adapter.
 extern "C" DLLEXPORT
 bool reset(void *adapter)
 {
-	LogMessage("reset");
+	log_message("DllExport", "reset");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
 
 	// Get parameters, but currently don't use it
     inputAdapterObject->_listenPort = (short int)::getConnectionParamInt64_t(inputAdapterObject->parameters,"ListenPort");
-	inputAdapterObject->_csvDelimiter = *(::getConnectionParamString(inputAdapterObject->parameters,"CsvDelimiter"));
+	// inputAdapterObject->_csvDelimiter = *(::getConnectionParamString(inputAdapterObject->parameters,"CsvDelimiter"));
     
 	if(inputAdapterObject->rowBuf)
         deleteConnectionRow(inputAdapterObject->rowBuf);
@@ -180,7 +167,7 @@ bool reset(void *adapter)
 extern "C" DLLEXPORT
 int64_t getTotalRowsProcessed(void *adapter)
 {
-	// LogMessage("getTotalRowsProcessed");
+	// log_message("DllExport", "getTotalRowsProcessed");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     return inputAdapterObject->_totalRows;
@@ -189,7 +176,7 @@ int64_t getTotalRowsProcessed(void *adapter)
 extern "C" DLLEXPORT
 int64_t getNumberOfBadRows(void *adapter)
 {
-	// LogMessage("getNumberOfBadRows");
+	// log_message("DllExport", "getNumberOfBadRows");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     return inputAdapterObject->_badRows;
@@ -198,7 +185,7 @@ int64_t getNumberOfBadRows(void *adapter)
 extern "C" DLLEXPORT
 int64_t getNumberOfGoodRows(void *adapter)
 {
-	// LogMessage("getNumberOfGoodRows");
+	// log_message("DllExport", "getNumberOfGoodRows");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     return inputAdapterObject->_goodRows;
@@ -212,7 +199,7 @@ were any errors during the processing of data.
 extern "C" DLLEXPORT
 bool hasError(void *adapter)
 {
-	// LogMessage("hasError");
+	// log_message("DllExport", "hasError");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     return !(::empty(inputAdapterObject->errorObjIdentifier));
@@ -225,7 +212,7 @@ from the adapter implementation.
 extern "C" DLLEXPORT
 void getError(void *adapter, char** errorString)
 {
-	LogMessage("getError");
+	log_message("DllExport", "getError");
 
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     ::getAdapterError(inputAdapterObject->errorObjIdentifier, errorString);
@@ -238,7 +225,7 @@ data processing specific to the adapter implementation.
 extern "C" DLLEXPORT
 void  start(void* adapter)
 {
-	LogMessage("start");
+	log_message("DllExport", "start");
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
 	inputAdapterObject->start(inputAdapterObject->_listenPort);
 }
@@ -249,7 +236,7 @@ Call this API to stop an adapter.
 extern "C" DLLEXPORT
 void  stop(void* adapter)
 {
-	LogMessage("stop");
+	log_message("DllExport", "stop");
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
 	inputAdapterObject->stop();
 }
@@ -261,7 +248,7 @@ an adapter is stopped
 extern "C" DLLEXPORT
 void  cleanup(void* adapter)
 {
-	LogMessage("cleanup");
+	log_message("DllExport", "cleanup");
 }
 
 /*
@@ -272,7 +259,7 @@ discovery. Adapters that support discovery return a value of true.
 extern "C" DLLEXPORT
 bool  canDiscover(void* adapter) 
 {
-	LogMessage("canDiscover");
+	log_message("DllExport", "canDiscover");
 
 	return true;
 }
@@ -286,7 +273,7 @@ types of files in a directory.
 extern "C" DLLEXPORT
 int getTableNames(void* adapter, char*** tables)
 {
-	LogMessage("getTableNames");
+	log_message("DllExport", "getTableNames");
 	// .. content removed
 	return 0;
 }
@@ -297,7 +284,7 @@ This method returns field names.
 extern "C" DLLEXPORT
 int getFieldNames(void* adapter, char*** names, const char* tableName)
 {
-	LogMessage("getFieldNames");
+	log_message("DllExport", "getFieldNames");
 	// .. content removed
 	return 0;
 }
@@ -308,7 +295,7 @@ This method returns field types.
 extern "C" DLLEXPORT
 int getFieldTypes(void* adapter, char*** types, const char* tableName)
 {
-	LogMessage("getFieldTypes");
+	log_message("DllExport", "getFieldTypes");
 	// .. content removed
 	return 0;
 }
@@ -319,7 +306,7 @@ This method returns sample rows.
 extern "C" DLLEXPORT
 int getSampleRow(void* adapter, char*** row, const char* tableName, int pos)
 {
-	LogMessage("getSampleRow");
+	log_message("DllExport", "getSampleRow");
 	// .. content removed
 	return 0;
 }
@@ -330,7 +317,7 @@ This method tells the adapter that it is running in discovery mode.
 extern "C" DLLEXPORT
 void setDiscovery(void* adapter)
 {
-	LogMessage("setDiscovery");
+	log_message("DllExport", "setDiscovery");
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
     inputAdapterObject->_discoveryMode = true;
 }
@@ -353,7 +340,7 @@ which is available in the adapter utility library.
 extern "C" DLLEXPORT
 void getStatistics(void* adapter, AdapterStatistics* adapterStatistics)
 {
-	// LogMessage("getStatistics");
+	// log_message("DllExport", "getStatistics");
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
 
     const char* key;
@@ -384,13 +371,12 @@ metadata stream.
 extern "C" DLLEXPORT
 int64_t getLatency(void* adapter)
 {
-	// LogMessage("getLatency");
+	// log_message("DllExport", "getLatency");
     return 100;
 }
 
 extern "C" DLLEXPORT
 void commitTransaction(void *adapter)
 {
-	LogMessage("commitTransaction");
+	log_message("DllExport", "commitTransaction");
 }
-
