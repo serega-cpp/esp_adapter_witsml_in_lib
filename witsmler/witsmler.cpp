@@ -4,6 +4,8 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -58,11 +60,27 @@ int main(int argc, char *argv[])
 		Sleep(333);
 	}
 
-	std::cerr << std::endl << "Info: Sending data to ESP (" << buffer_size << " bytes) ..." << std::endl;
-	if (!esp_server.Send(buffer.get(), buffer_size))
-		std::cerr << "Error: send to esp failed" << std::endl;
+	int cLoopCount = 1000;
+	std::cerr << std::endl << "Info: Sending data to ESP (" << buffer_size << " x " << cLoopCount << " bytes)..." << std::endl;
 
-	std::cerr << "Completed!" << std::endl;
+	clock_t c1 = clock();
+
+	size_t total_bytes = 0;
+	for (int i = 0; i < cLoopCount; i++) {
+		if (!esp_server.Send(buffer.get(), buffer_size)) {
+			std::cerr << "Error: send to esp failed" << std::endl;
+			break;
+		}
+
+		total_bytes += buffer_size;
+	}
+
+	clock_t c2 = clock();
+
+	std::cerr << "Completed! (" << double(c2 - c1) / CLOCKS_PER_SEC << " sec, " 
+								<< total_bytes << " bytes, " 
+								<< total_bytes / (double(c2 - c1) / CLOCKS_PER_SEC) << " bytes/sec)" 
+								<< std::endl;
 
 	return 0;
 }
