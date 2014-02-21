@@ -170,10 +170,11 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 			std::stringstream csv_row;
 
 			csv_row << cColumnInfoTableId << output_delimiter			// table_id [ColumnInfo]
+					<< hash_prefix << output_delimiter					// hash prefix (identify Device)
+					<< info_it->hash << output_delimiter				// hash postfix (identify Parameter)
 					<< output_delimiter									// timestamp
 					<< output_delimiter									// data value
 					<< info_it->uint_columnIndex << output_delimiter	// column index [shared]
-					<< hash_prefix << output_delimiter					// hash
 					<< info_it->text_columnIndex << output_delimiter	// column text
 					<< info_it->startIndex << output_delimiter			// start index
 					<< info_it->endIndex << output_delimiter			// end index
@@ -198,10 +199,11 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 				std::stringstream csv_row;
 
 				csv_row << cDataLogTableId << output_delimiter				// table_id [DataLog]
+						<< hash_prefix << output_delimiter					// hash prefix (identify Device)
+						<< info_it->hash << output_delimiter				// hash postfix (identify Parameter)
 						<< fieldsData[0] << output_delimiter				// timestamp
 						<< fieldsData[info_it->uint_columnIndex] << output_delimiter	// data value
-						<< info_it->uint_columnIndex << output_delimiter	// column index [shared]
-						<< output_delimiter									// hash
+						<< output_delimiter									// column index [shared]
 						<< output_delimiter									// column text
 						<< output_delimiter									// start index
 						<< output_delimiter									// end index
