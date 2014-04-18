@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <fstream>
 
 namespace Utils
 {
@@ -257,5 +258,18 @@ namespace Utils
 
 	    return(f - l);
 	}
+
+    bool GetFileContent(const char *file_name, std::string &content) 
+    {
+	    std::ifstream ifile(file_name);
+	    if (!ifile.is_open())
+		    return false;
+
+	    std::stringstream buffer;
+	    buffer << ifile.rdbuf();
+
+	    content.assign(buffer.str());
+	    return true;
+    } 
 
 } // namespace Utils

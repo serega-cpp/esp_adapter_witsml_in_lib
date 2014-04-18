@@ -78,6 +78,8 @@ namespace Utils
 	char * itoa(int val, char *buf, int base);
 	int strcmpi(const char *s1, const char *s2);
 
+    bool GetFileContent(const char *file_name, std::string &content);
+
 } // namespace Utils
 
 #endif // __UTILS_H__

@@ -8,7 +8,7 @@ all: witsmler
 
 witsmler: $(OBJECTS)
 	$(MAKE) -C ../common 
-	$(CXX) -o ../witsmler.a $(CXXFLAGS) $(LIBS) $(OBJECTS) ../common/TcpClient.o 
+	$(CXX) -o ../witsmler.a $(CXXFLAGS) $(LIBS) $(OBJECTS) ../common/TcpClient.o ../common/Utils.o
 
 witsmler.o: witsmler.cpp
 
