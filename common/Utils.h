@@ -75,7 +75,7 @@ namespace Utils
 
 	unsigned short int Crc16(const unsigned char *block, size_t len);
 
-	char * itoa(int val, char *buf, int base);
+	char * itoa(unsigned int val, char *buf, int base);
 	int strcmpi(const char *s1, const char *s2);
 
     bool GetFileContent(const char *file_name, std::string &content);

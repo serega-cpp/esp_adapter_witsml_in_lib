@@ -210,7 +210,7 @@ namespace Utils
 	const char *ExtractFileName(const char *full_path)
 	{
 		const char *executable_fname;
-		if ((executable_fname = strrchr(full_path, '/')) || (executable_fname = strrchr(full_path, '\\')))
+		if ((executable_fname = strrchr(full_path, '/')) != 0 || (executable_fname = strrchr(full_path, '\\')) != 0)
 			return executable_fname + 1; // the next position after the slash
 
 		return full_path; // seems the full_path is actually an executable file name
@@ -231,7 +231,7 @@ namespace Utils
 		return crc;
 	}
 
-	char * itoa(int val, char *buf, int base)
+	char * itoa(unsigned int val, char *buf, int base)
 	{
 		char internal_buf[32] = { 0 };
 
