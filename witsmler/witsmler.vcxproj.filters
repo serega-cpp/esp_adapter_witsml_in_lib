@@ -16,10 +16,17 @@
     <Filter Include="common">
       <UniqueIdentifier>{4620b420-f2a8-4057-a037-f6767f72384d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{b95627c5-a8d2-45b3-bbaa-dd58fde18517}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
     <None Include="Makefile" />
+    <None Include="settings.xml" />
+    <None Include="..\pugixml\Makefile">
+      <Filter>pugixml</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\array_ptr.h">
@@ -40,6 +47,18 @@
     <ClInclude Include="..\common\TcpClient.h">
       <Filter>common</Filter>
     </ClInclude>
+    <ClInclude Include="BNvalues.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SampleData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pugixml\pugiconfig.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\pugixml\pugixml.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="witsmler.cpp">
@@ -56,6 +75,15 @@
     </ClCompile>
     <ClCompile Include="..\common\TcpClient.cpp">
       <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="BNvalues.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SampleData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pugixml\pugixml.cpp">
+      <Filter>pugixml</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

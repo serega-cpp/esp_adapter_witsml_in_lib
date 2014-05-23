@@ -14,9 +14,11 @@
 
 <runNumber>0</runNumber>
 
-<indexType>DateTime</indexType><startIndex>2006-08-02T22:46:45.000+02:00</startIndex>
+<indexType>DateTime</indexType><startIndex>2006-08-02T22:46:45.000</startIndex>
 
-<endIndex>2006-08-03T00:48:40.000+02:00</endIndex>
+<endIndex>2006-08-03T00:48:40.000</endIndex>
+
+<indexNote>+02:00</indexNote>
 
 <direction>Increasing</direction><indexCurve>Time</indexCurve><stepIncrement>0</stepIncrement>
 

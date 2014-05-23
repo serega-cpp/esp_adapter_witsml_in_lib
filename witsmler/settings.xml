@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings>
+  <column>
+    <file>col01.csv</file>
+  	<index>1</index>
+  </column>
+  <column>
+    <file>col02.csv</file>
+	  <index>2</index>
+  </column>
+  <column>
+    <file>col03.csv</file>
+	  <index>3</index>
+  </column>
+  <column>
+    <file>col04.csv</file>
+	  <index>4</index>
+  </column>
+  <column>
+    <file>col05.csv</file>
+	  <index>5</index>
+  </column>
+  <column>
+    <file>col06.csv</file>
+	  <index>6</index>
+  </column>
+  <column>
+    <file>col07.csv</file>
+	  <index>7</index>
+  </column>
+  <column>
+    <file>col08.csv</file>
+	  <index>8</index>
+  </column>
+  <column>
+    <file>col09.csv</file>
+	  <index>9</index>
+  </column>
+  <column>
+    <file>col10.csv</file>
+	  <index>10</index>
+  </column>
+  <column>
+    <file>col11.csv</file>
+	  <index>11</index>
+  </column>
+  <column>
+    <file>col12.csv</file>
+	  <index>12</index>
+  </column>
+  <column>
+    <file>col13.csv</file>
+	  <index>13</index>
+  </column>
+  <column>
+    <file>col14.csv</file>
+	  <index>14</index>
+  </column>
+  <beginTime>2014-04-28 00:00:00</beginTime>
+  <endTime>2014-04-28 02:00:00</endTime>
+  <timeZone>+02:00</timeZone>
+  <timeStepSec>15.0</timeStepSec>
+  <timeFilePeriodSec>30</timeFilePeriodSec>
+</settings>

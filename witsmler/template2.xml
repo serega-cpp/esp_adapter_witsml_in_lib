@@ -18,6 +18,8 @@
 
 <endIndex>@@ENDTIME@@</endIndex>
 
+<indexNote>@@TZ@@</indexNote>
+
 <direction>Increasing</direction><indexCurve>Time</indexCurve><stepIncrement>0</stepIncrement>
 
 <indexUnits>unitless</indexUnits><nullValue>-999.25</nullValue>
