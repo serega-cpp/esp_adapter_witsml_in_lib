@@ -2,23 +2,33 @@
 <Adapter type="input"
   id="witsml_in"
   label="WITSML Input (Custom)"
-  descr="WITSML Custom Input Adapter"
->
+  descr="WITSML Custom Input Adapter">
+
   <Library file="witsml_in" type="binary"/>
   <Special>
+    <Internal id="x_InternalLogEnable"
+       label="InternalLogEnable"
+       descr="Internal Log: Enable log to files"
+       type="boolean"
+       default="false"/>
+    <Internal id="x_InternalLogPath"
+      label="InternalLogPath"
+      descr="Internal Log: Path to log files"
+      type="string"
+      default="C:\Temp"/>
   </Special>
   <Section>
     <Parameter id="ListenPort"
       label="ListenPort"
-      descr="On which port waiting for connection from cvs stream generators"
+      descr="Listen port for incoming connections"
       type="uint"
       use="required"
       default="12345"/>
-    <Parameter id="CsvDelimiter"
-      label="CsvDelimiter"
-      descr="Symbol used to separate the columns"
-      type="string"
+    <Parameter id="LogMessageBodyEnable"
+      label="LogMessageBodyEnable"
+      descr="Enable messages body logging into file"
+      type="boolean"
       use="advanced"
-      default=";"/>
-  </Section>
+      default="false"/>
+   </Section>
 </Adapter>

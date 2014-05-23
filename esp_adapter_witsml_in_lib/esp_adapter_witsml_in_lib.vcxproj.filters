@@ -25,6 +25,9 @@
     <None Include="witsml_in.cnxml" />
     <None Include="witsml_in.ccl" />
     <None Include="Makefile" />
+    <None Include="..\pugixml\Makefile">
+      <Filter>pugixml</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="esp_adapter_witsml_in_lib.cpp">

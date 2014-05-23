@@ -104,6 +104,7 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 
 		std::string log_NameWell;
 		std::string log_NameWellbore;
+        std::string logHeader_indexNote;
 		std::string logHeader_UomNamingSystem;
 		std::string commonData_NameSource;
 		std::vector<LogCurveInfoRec> logCurveInfo;
@@ -111,7 +112,6 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 
 		for (std::vector<TableData>::iterator table_it = tables.begin(); table_it != tables.end(); ++table_it) {
 			std::string group(table_it->GetName());
-			log_message("WitsmlProcessor", group.c_str());
 
 			// array variables
 			if (Utils::strcmpi(group.c_str(), "logCurveInfo") == 0) {	// columns
@@ -152,6 +152,7 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 			else if (Utils::strcmpi(group.c_str(), "logHeader") == 0) {
 				for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
 					if (Utils::strcmpi(row_it->first.c_str(), "UomNamingSystem") == 0) logHeader_UomNamingSystem.assign(row_it->second);
+					else if (Utils::strcmpi(row_it->first.c_str(), "indexNote") == 0) logHeader_indexNote.assign(row_it->second);
 				}
 			}
 			else if (Utils::strcmpi(group.c_str(), "commonData") == 0) {
@@ -174,6 +175,7 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 					<< info_it->hash << output_delimiter				// hash postfix (identify Parameter)
 					<< output_delimiter									// timestamp
 					<< output_delimiter									// data value
+                    << logHeader_indexNote << output_delimiter          // index note (time zone, actually)
 					<< info_it->uint_columnIndex << output_delimiter	// column index [shared]
 					<< info_it->text_columnIndex << output_delimiter	// column text
 					<< info_it->startIndex << output_delimiter			// start index
@@ -202,7 +204,8 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 						<< hash_prefix << output_delimiter					// hash prefix (identify Device)
 						<< info_it->hash << output_delimiter				// hash postfix (identify Parameter)
 						<< fieldsData[0] << output_delimiter				// timestamp
-						<< fieldsData[info_it->uint_columnIndex] << output_delimiter	// data value
+						<< fieldsData[info_it->uint_columnIndex - 1] << output_delimiter	// data value
+                        << logHeader_indexNote << output_delimiter          // index note (time zone, actually)
 						<< output_delimiter									// column index [shared]
 						<< output_delimiter									// column text
 						<< output_delimiter									// start index

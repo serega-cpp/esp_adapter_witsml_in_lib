@@ -1,6 +1,6 @@
 CXX=g++
 CXXFLAGS=-I$(ESP_HOME)include/ -I../boost -I../ -g -O2 -fPIC
-LDFLAGS=-L$(ESP_HOME)lib/adapters/ -L$(ESP_HOME)lib/ -L./boost/lib64
+LDFLAGS=-L$(ESP_HOME)lib/adapters/ -L$(ESP_HOME)lib/
 OBJECTS=cqueue.o esp_adapter_witsml_in_lib.o InputAdapter.o TextMessageBuffer.o WitsmlProcessor.o log_message.o
 
 LIBS=-lstdc++ -lesp_adapter_util_lib -lesp_server_lib -lboost_thread

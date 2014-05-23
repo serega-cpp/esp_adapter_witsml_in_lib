@@ -16,8 +16,8 @@ struct InputAdapter
 {
     InputAdapter(char csvDelimiter);
 
-	bool start(short int port);			//!< tell adapter to start
-	void stop();						//!< commands adapter to stop
+	bool start(short int port, bool doDebugOutput = false);  //!< tell adapter to start
+	void stop();						                     //!< commands adapter to stop
 
     int getColumnCount();
     void setState(int st);
@@ -34,12 +34,13 @@ struct InputAdapter
     int64_t _goodRows;
     int64_t _totalRows;
 
-	// Parameneters
+	// Parameters
     short int _listenPort;				//!< TCP server listening port number
 	char	  _csvDelimiter;			//!< csv reader filed separator character
+    bool      _logMessageBody;
 
-	bool _discoveryMode;
-	bool _stoppedState;					//!< used to stop adapter
+	bool      _discoveryMode;
+	bool      _stoppedState;			//!< used to stop adapter
 
 	TcpServer				_tcpServ;	//!< Listening TCP server object
 	cqueue <std::string>	_msgQueue;	//!< Internal Queue

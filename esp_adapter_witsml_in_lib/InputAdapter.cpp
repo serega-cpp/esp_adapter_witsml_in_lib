@@ -15,20 +15,22 @@ InputAdapter::InputAdapter(char csvDelimiter):
     _totalRows(0),
     _listenPort(12345),
 	_csvDelimiter(csvDelimiter),
+    _logMessageBody(false),
 	_discoveryMode(false),
 	_stoppedState(false),
 	_msgQueue(64 * 1024)
 {
-	log_message("InputAdapter", "[ctor]");
+	log().log_message("InputAdapter", Log::Debug, "Adapter Object has created");
 }
 
-bool InputAdapter::start(short int port)
+bool InputAdapter::start(short int port, bool logMessageBody)
 {
-	log_message("InputAdapter", "start on %d port", port);
+	log().log_message("InputAdapter", Log::Info, "Starting on %d port", port);
+    _logMessageBody = logMessageBody;
 	_stoppedState = false;
 
 	if (!_tcpServ.Create(0, port)) {
-		log_message("InputAdapter", "<ERROR> Failed to create TCP SERVER");
+		log().log_message("InputAdapter", Log::Error, "Failed to create listen socket");
 		return false;
 	}
 
@@ -38,8 +40,10 @@ bool InputAdapter::start(short int port)
 
 void InputAdapter::stop()
 {
-	log_message("InputAdapter", "stop");
-	_stoppedState = true;
+	log().log_message("InputAdapter", Log::Info, "Adapter has stopped");
+    logMessage(connectionCallBackReference, L_INFO, "Adapter has stopped");
+
+    _stoppedState = true;
 
 	_accept_thread.detach();
 	_tcpServ.StopServer();
@@ -49,25 +53,21 @@ void InputAdapter::stop()
 
 int InputAdapter::getColumnCount()
 {
-	// log_message("InputAdapter", "getColumnCount");
     return ::getColumnCount(schemaInformation);
 }
 
 void InputAdapter::setState(int st)
 {
-	// log_message("InputAdapter", "setState");
     ::setAdapterState(connectionCallBackReference, st);
 }
 
 bool InputAdapter::discoverTables()
 {
-	log_message("InputAdapter", "discoverTables");
     return true;
 }
 
 bool InputAdapter::discover(std::string tableName)
 {
-	log_message("InputAdapter", "discover");
     return true;
 }
 
@@ -76,7 +76,7 @@ bool InputAdapter::discover(std::string tableName)
 //
 void InputAdapter::accept_fn()
 {
-	log_message("InputAdapter", "accept_fn enetring");
+	log().log_message("InputAdapter", Log::Info, "Incoming connection acceptor has started");
 
 	// Keep all clients here to cleanup on exit
 	std::vector<std::pair<TcpConnectedClient *, boost::thread *> > clients;
@@ -85,7 +85,7 @@ void InputAdapter::accept_fn()
 	while (_tcpServ.WaitForClient()) {
 
 		TcpConnectedClient *client = _tcpServ.GetConnectedClient(true);
-		log_message("InputAdapter", "new client connection");
+		log().log_message("InputAdapter", Log::Info, "New incoming connection has accepted");
 
 		// Start separate thread for each client
 		// (can be replaced by 'select' like architecture in future)
@@ -100,14 +100,14 @@ void InputAdapter::accept_fn()
 		delete it->second;
 	}
 
-	log_message("InputAdapter", "accept_fn completed");
+	log().log_message("InputAdapter", Log::Info, "Incoming connection acceptor has finished");
 }
 
 // Thread Function which is communicationg with one client
 //
 void InputAdapter::client_fn(TcpConnectedClient *client)
 {
-	log_message("InputAdapter", "client_fn entering");
+	log().log_message("InputAdapter", Log::Info, "New client processor has started");
 
 	int received;
 	char buf[8192];
@@ -122,6 +122,9 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 	while ((received = client->Recv(buf, sizeof(buf) - 1)) > 0) {
 		buf[received] = '\0';
 
+        if (_logMessageBody)
+            log().log_message("InputAdapter", Log::Debug, "<MSG> %s", buf);
+
 		xml_buffer.AddString(buf, received);
 
 		std::string xml_msg = xml_buffer.GetNextMessage();
@@ -131,7 +134,8 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 			witsml_rows.clear();
 
 			if (!process_witsml(xml_msg, ';', witsml_rows)) {
-				log_message("InputAdapter", "<ERROR> Failed to parse XML");
+				log().log_message("InputAdapter", Log::Error, "Failed to parse incoming WitsML");
+                
 				continue;
 			}
 
@@ -140,5 +144,5 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 		}
 	}
 
-	log_message("InputAdapter", "client_fn completed");
+	log().log_message("InputAdapter", Log::Info, "New client processor has finished");
 }
