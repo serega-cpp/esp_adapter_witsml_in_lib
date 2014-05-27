@@ -26,17 +26,27 @@ private:
 };
 
 struct LogCurveInfoRec {
-	LogCurveInfoRec(const std::string &hash, unsigned int uint_columnIndex, const std::string &text_columnIndex, std::string startIndex, std::string endIndex): 
-		hash(hash), 
-		uint_columnIndex(uint_columnIndex), 
-		text_columnIndex(text_columnIndex), 
-		startIndex(startIndex), 
-		endIndex(endIndex) {
-	}
+	LogCurveInfoRec(
+        const std::string &hash, 
+        unsigned int uint_columnIndex, 
+        const std::string &text_columnIndex, 
+        const std::string &mnemonic, 
+        const std::string &mnemAlias, 
+        const std::string &startIndex, 
+        const std::string &endIndex)
+		: hash(hash)
+		, uint_columnIndex(uint_columnIndex)
+		, text_columnIndex(text_columnIndex)
+		, text_mnemonic(mnemonic)
+		, mnemAlias_columnIndex(mnemAlias)
+		, startIndex(startIndex)
+		, endIndex(endIndex) {}
 
 	std::string		hash;
 	unsigned int	uint_columnIndex;
 	std::string		text_columnIndex;
+	std::string		text_mnemonic;
+	std::string		mnemAlias_columnIndex;
 	std::string		startIndex;
 	std::string		endIndex;
 };

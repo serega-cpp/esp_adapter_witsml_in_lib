@@ -134,7 +134,7 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
 
 				std::string	hash_postfix = hash(mnemonic);
 
-				LogCurveInfoRec rec(hash_postfix, columnIndex, std::string(mnemAlias + ": " + curveDescription), startIndex, endIndex);
+				LogCurveInfoRec rec(hash_postfix, columnIndex, curveDescription, mnemonic, mnemAlias, startIndex, endIndex);
 				logCurveInfo.push_back(rec);
 			}
 			else if (Utils::strcmpi(group.c_str(), "logData") == 0) {	// rows
@@ -178,6 +178,8 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
                     << logHeader_indexNote << output_delimiter          // index note (time zone, actually)
 					<< info_it->uint_columnIndex << output_delimiter	// column index [shared]
 					<< info_it->text_columnIndex << output_delimiter	// column text
+				    << info_it->text_mnemonic << output_delimiter		// mnemonic text
+					<< info_it->mnemAlias_columnIndex << output_delimiter	// mnemAlias text
 					<< info_it->startIndex << output_delimiter			// start index
 					<< info_it->endIndex << output_delimiter			// end index
 					<< log_NameWell << output_delimiter					// name well
@@ -208,6 +210,8 @@ bool process_witsml(const std::string &witsml, char output_delimiter, std::vecto
                         << logHeader_indexNote << output_delimiter          // index note (time zone, actually)
 						<< output_delimiter									// column index [shared]
 						<< output_delimiter									// column text
+						<< output_delimiter									// mnemonic text
+						<< output_delimiter									// mnemAlias text
 						<< output_delimiter									// start index
 						<< output_delimiter									// end index
 						<< output_delimiter									// name well
