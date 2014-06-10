@@ -5,6 +5,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "esp_adapter_witsml_in_lib",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "witsmler", "witsmler\witsmler.vcxproj", "{8EE63055-2E4D-440D-AD37-52CAF6BDC0A5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "esp_adapter_debug", "esp_adapter_debug\esp_adapter_debug.vcxproj", "{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -27,6 +29,12 @@ Global
 		{8EE63055-2E4D-440D-AD37-52CAF6BDC0A5}.Release|Win32.Build.0 = Release|Win32
 		{8EE63055-2E4D-440D-AD37-52CAF6BDC0A5}.Release|x64.ActiveCfg = Release|x64
 		{8EE63055-2E4D-440D-AD37-52CAF6BDC0A5}.Release|x64.Build.0 = Release|x64
+		{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}.Debug|Win32.Build.0 = Debug|Win32
+		{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}.Debug|x64.ActiveCfg = Debug|Win32
+		{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}.Release|Win32.ActiveCfg = Release|Win32
+		{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}.Release|Win32.Build.0 = Release|Win32
+		{32DBA4E0-EBD1-4ED8-9EAA-F6F68C0AFFBA}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -272,4 +272,16 @@ namespace Utils
 	    return true;
     } 
 
+    bool SetFileContent(const char *file_name, const std::vector<std::string> &content)
+    {
+	    std::ofstream ofile(file_name);
+	    if (!ofile.is_open())
+		    return false;
+
+        for (size_t i = 0; i < content.size(); i++)
+            ofile << content[i];
+
+	    return true;
+    }
+
 } // namespace Utils

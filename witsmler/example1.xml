@@ -16,7 +16,7 @@
 
 <shape>Deviated</shape>
 
-<dTimKickoff>2006-07-02 21:30:00.0000000+02:00</dTimKickoff>
+<dTimKickoff>2006-07-02 21:30:00.0000000</dTimKickoff>
 
 <mdKickoff uom="m">0</mdKickoff>
 
@@ -30,11 +30,11 @@
 
 <nameSource>SC001</nameSource>
 
-<dTimStamp>2007-06-11 14:05:50.6940000+02:00</dTimStamp>
+<dTimStamp>2007-06-11 14:05:50.6940000</dTimStamp>
 
-<dTimCreation>2007-06-07 10:25:56.4370000+02:00</dTimCreation>
+<dTimCreation>2007-06-07 10:25:56.4370000</dTimCreation>
 
-<dTimLastChange>2007-06-07 10:25:56.4370000+02:00</dTimLastChange>
+<dTimLastChange>2007-06-07 10:25:56.4370000</dTimLastChange>
 
 <itemState>Actual</itemState>
 

@@ -140,11 +140,28 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\pugixml\Makefile" />
+    <None Include="col01.csv" />
+    <None Include="col02.csv" />
+    <None Include="col03.csv" />
+    <None Include="col04.csv" />
+    <None Include="col05.csv" />
+    <None Include="col06.csv" />
+    <None Include="col07.csv" />
+    <None Include="col08.csv" />
+    <None Include="col09.csv" />
+    <None Include="col10.csv" />
+    <None Include="col11.csv" />
+    <None Include="col12.csv" />
+    <None Include="col13.csv" />
+    <None Include="col14.csv" />
+    <None Include="example1.xml" />
+    <None Include="example2.xml" />
     <None Include="Makefile" />
     <None Include="ReadMe.txt" />
     <None Include="settings.xml">
       <SubType>Designer</SubType>
     </None>
+    <None Include="template2.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\array_ptr.h" />

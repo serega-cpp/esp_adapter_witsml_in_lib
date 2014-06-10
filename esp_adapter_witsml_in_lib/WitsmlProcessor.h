@@ -10,14 +10,52 @@
 #include "pugixml/pugixml.hpp"
 #include "common/Utils.h"
 
-class TableData: public std::vector<std::pair<std::string, std::string> >
+// meta info: static, variable; data
+// Rule, Item
+
+struct WitsmlRule
+{
+    struct Item
+    {
+        enum Type { 
+            TextType, 
+            HashType 
+        };
+
+        std::string         name;
+        Type                type;
+
+        std::string         text_value;
+        std::vector<size_t> hashed_indexes;
+
+        Item(Type type, const std::string &value);
+    };
+
+    std::string         meta_table_id;
+
+    std::vector<Item>   static_columns;
+    std::vector<size_t> static_key_indexes;
+
+    std::vector<Item>   variable_columns;
+    std::string         variable_node_name;
+    std::vector<size_t> variable_key_indexes;
+
+    std::string         data_table_id;
+    std::string         data_node_name;
+    std::string         data_field_name;
+
+    int  FindMetaStaticColumn(const char *node_name, const char *value_name) const;
+    int  FindMetaVariableColumn(const char *value_name) const;
+};
+
+class Table: public std::vector<std::pair<std::string, std::string> >
 {
 public:
-	TableData(const char *table_name = 0) {
+	Table(const char *table_name = 0) {
 		if (table_name) m_table_name.assign(table_name);
 	}
 
-	const char *GetName() {
+	const char *GetName() const {
 		return m_table_name.c_str();
 	}
 
@@ -25,36 +63,8 @@ private:
 	std::string m_table_name;
 };
 
-struct LogCurveInfoRec {
-	LogCurveInfoRec(
-        const std::string &hash, 
-        unsigned int uint_columnIndex, 
-        const std::string &text_columnIndex, 
-        const std::string &mnemonic, 
-        const std::string &mnemAlias, 
-        const std::string &startIndex, 
-        const std::string &endIndex)
-		: hash(hash)
-		, uint_columnIndex(uint_columnIndex)
-		, text_columnIndex(text_columnIndex)
-		, text_mnemonic(mnemonic)
-		, mnemAlias_columnIndex(mnemAlias)
-		, startIndex(startIndex)
-		, endIndex(endIndex) {}
-
-	std::string		hash;
-	unsigned int	uint_columnIndex;
-	std::string		text_columnIndex;
-	std::string		text_mnemonic;
-	std::string		mnemAlias_columnIndex;
-	std::string		startIndex;
-	std::string		endIndex;
-};
-
-bool traverse_xml(pugi::xml_node_iterator root_it, std::pair<std::string, std::string> uid, std::vector<TableData> &tables);
-std::string hash(const std::string &s1, const std::string &s2 = std::string());
-std::string hash(const std::string &s1, const std::string &s2, const std::string &s3, const std::string &s4 = std::string());
-
-bool process_witsml(const std::string &witsml, char output_delimiter, std::vector<std::string> &rows);
+bool traverse_xml(const pugi::xml_node_iterator &node, std::vector<Table> &tables);
+bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule);
+bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, char output_delimiter, std::vector<std::string> &rows);
 
 #endif // __WITSMLPROCESSOR_H__

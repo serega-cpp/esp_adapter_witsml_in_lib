@@ -79,6 +79,7 @@ namespace Utils
 	int strcmpi(const char *s1, const char *s2);
 
     bool GetFileContent(const char *file_name, std::string &content);
+    bool SetFileContent(const char *file_name, const std::vector<std::string> &content);
 
 } // namespace Utils
 

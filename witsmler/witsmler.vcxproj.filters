@@ -19,6 +19,9 @@
     <Filter Include="pugixml">
       <UniqueIdentifier>{b95627c5-a8d2-45b3-bbaa-dd58fde18517}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sample Files">
+      <UniqueIdentifier>{fddc6ef2-cfb7-4157-af52-da0d7d2600c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -26,6 +29,57 @@
     <None Include="settings.xml" />
     <None Include="..\pugixml\Makefile">
       <Filter>pugixml</Filter>
+    </None>
+    <None Include="col01.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col02.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col03.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col04.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col05.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col06.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col07.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col08.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col09.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col10.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col11.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col12.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col13.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="col14.csv">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="example1.xml">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="example2.xml">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include="template2.xml">
+      <Filter>Sample Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

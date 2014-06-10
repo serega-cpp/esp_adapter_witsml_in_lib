@@ -5,220 +5,331 @@
 #include <assert.h>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 #include "pugixml/pugixml.hpp"
 #include "log_message.h"
 
-std::string hash(const std::string &s1, const std::string &s2)
-{
-	unsigned short int crc1 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s1.c_str()), s1.length());
-	unsigned short int crc2 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s2.c_str()), s2.length());
+const char cCsvDelimiter = ',';
 
+///////////////////////////////////////////////////////////////////////////////
+
+#ifdef _DEBUG
+
+#include <iostream>
+
+void PrintTable(const Table &table)
+{
+    std::cout << table.GetName() << "[" << table.size() << "]" << std::endl; 
+
+    for (size_t j = 0; j < table.size(); j++)
+        std::cout << "  " << table.at(j).first << ":" << table.at(j).second << std::endl;
+}
+
+#endif // _DEBUG
+
+///////////////////////////////////////////////////////////////////////////////
+
+std::string hash(const std::string &s1, const std::string &s2, const std::string &s3, const std::string &s4)
+{
 	std::stringstream ss;
-	if (s2.empty()) ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1;
-	else ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1 << crc2;
+
+	unsigned short int crc1 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s1.c_str()), s1.length());
+    if (!s2.empty()) {
+
+        unsigned short int crc2 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s2.c_str()), s2.length());
+        if (!s3.empty()) {
+	    
+            unsigned short int crc3 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s3.c_str()), s3.length());
+            if (!s4.empty()) {
+        	
+                unsigned short int crc4 = Utils::Crc16(reinterpret_cast<const unsigned char *>(s4.c_str()), s4.length());
+                ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1 << crc2 << crc3 << crc4;
+            }
+            else ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1 << crc2 << crc3;
+        }
+        else ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1 << crc2;
+    }
+    else ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << crc1;
 
 	return ss.str();
 }
 
-std::string hash(const std::string &s1, const std::string &s2, const std::string &s3, const std::string &s4)
+std::string process_hash_field(const std::vector<std::string> &fields, const std::vector<size_t> &hashed_indexes)
 {
-	return hash(s1, s2) + hash(s3, s4);
+    std::string s[4];
+
+    for (size_t i = 0; i < hashed_indexes.size(); i++)
+        s[i % 4].append(fields[hashed_indexes[i]]);
+
+    return hash(s[0], s[1], s[2], s[3]);
 }
 
-bool traverse_xml(pugi::xml_node_iterator root_it, std::pair<std::string, std::string> uid, std::vector<TableData> &tables)
+void process_csv_indexes(const std::string &positions_csv, std::vector<size_t> &indexes)
 {
-	TableData active_table(root_it->name());
-	bool is_root_table = uid.first.empty();
+    std::vector<std::string> hashed_fields;
+    Utils::SplitCsv(positions_csv, cCsvDelimiter, hashed_fields);
+    for (size_t idx = 0; idx < hashed_fields.size(); idx++)
+        indexes.push_back(atoi(hashed_fields[idx].c_str()) - 1);
+}
 
-	if (is_root_table) {
-		uid.first.assign("uid");
-		uid.first.append(root_it->name());
-	}
+///////////////////////////////////////////////////////////////////////////////
 
-	for (pugi::xml_attribute_iterator attr_it = root_it->attributes().begin(); attr_it != root_it->attributes().end(); ++attr_it) {
+WitsmlRule::Item::Item(WitsmlRule::Item::Type type, const std::string &value): type(type) {
 
-		// looking for 'main ID' value, which will be used for all tables
-		if (is_root_table && Utils::strcmpi(attr_it->name(), uid.first.c_str()) == 0) {
-			uid.second.assign(attr_it->value());
-			continue;
-		}
+    if (type == WitsmlRule::Item::TextType) {
+        size_t sep_pos = value.find(":");
+        if (sep_pos != std::string::npos) {
+            name.swap(value.substr(0, sep_pos));
+            this->text_value.swap(value.substr(sep_pos + 1));
+        }
+        else this->text_value = value;
+    }
+    else if (type == WitsmlRule::Item::HashType) {
+        process_csv_indexes(value, hashed_indexes);
+    }
+}
+
+int WitsmlRule::FindMetaStaticColumn(const char *node_name, const char *value_name) const
+{
+    for (size_t idx = 0; idx < static_columns.size(); idx++) {
+        if (Utils::strcmpi(node_name, static_columns[idx].name.c_str()) == 0 &&
+            Utils::strcmpi(value_name, static_columns[idx].text_value.c_str()) == 0) 
+            return idx;
+    }
+
+    return -1;
+}
+
+int WitsmlRule::FindMetaVariableColumn(const char *value_name) const
+{
+    for (size_t idx = 0; idx < variable_columns.size(); idx++) {
+        if (Utils::strcmpi(value_name, variable_columns[idx].text_value.c_str()) == 0) 
+            return idx;
+    }
+
+    return -1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool traverse_xml(const pugi::xml_node_iterator &node, std::vector<Table> &tables)
+{
+	Table active_table(node->name());
+
+	for (pugi::xml_attribute_iterator attr_it = node->attributes().begin(); attr_it != node->attributes().end(); ++attr_it) {
 
 		active_table.push_back(std::pair<std::string, std::string>(attr_it->name(), attr_it->value()));
 	}
 
-	size_t attr_count = active_table.size();
-
-	for (pugi::xml_node_iterator children_it = root_it->children().begin(); children_it != root_it->children().end(); ++children_it) {
+	for (pugi::xml_node_iterator children_it = node->children().begin(); children_it != node->children().end(); ++children_it) {
 
 		if (children_it->type() == pugi::node_element) {
 
-			if (!traverse_xml(children_it, uid, tables)) {
+			if (!traverse_xml(children_it, tables)) {
 				std::pair<std::string, std::string> child(children_it->name(), children_it->child_value());
-
-				if (active_table.empty() || active_table.back().first != children_it->name()) {
-					active_table.push_back(child);
-				}
-				else {
-					TableData second_active_table(active_table.GetName());
-
-					active_table.push_back(child);
-					active_table.push_back(uid);
-
-					tables.push_back(second_active_table);
-				}
+				active_table.push_back(child);
 			}
 		}
 	}
 
-	if (active_table.size() == attr_count)
-		return false;
+    if (active_table.empty())
+        return false;
 
-	active_table.insert(active_table.begin(), uid);
 	tables.push_back(active_table);
-
 	return true;
 }
 
-bool process_witsml(const std::string &witsml, char output_delimiter, std::vector<std::string> &rows)
-{
-	int cColumnInfoTableId = 1001;
-	int cDataLogTableId = 1002;
+///////////////////////////////////////////////////////////////////////////////
 
+bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
+{
+    if (rule_text.empty()) return false;
+	pugi::xml_document	xml_doc;
+
+	// parse xml
+	pugi::xml_parse_result result = xml_doc.load_buffer(rule_text.c_str(), rule_text.length());
+	if (!result) return false;
+ 
+	pugi::xml_node_iterator rule = xml_doc.children().begin();
+
+	std::vector<Table> tables;
+	if (!traverse_xml(rule, tables) && tables.empty())
+		return false;
+
+    // for (size_t i = 0; i < tables.size(); i++)
+    //    PrintTable(tables[i]);
+
+    for (std::vector<Table>::iterator table_it = tables.begin(); table_it != tables.end(); ++table_it) {
+        const char *node_name = table_it->GetName();
+
+        if (Utils::strcmpi(node_name, "ColumnsMeta") == 0) {
+			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+                if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) witsml_rule.meta_table_id.swap(row_it->second.c_str());
+            }
+        }
+        else if (Utils::strcmpi(node_name, "StaticAttrs") == 0) {
+			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+
+                if (Utils::strcmpi(row_it->first.c_str(), "NodeName") == 0) 
+                    witsml_rule.static_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TextType, row_it->second));
+                else if (Utils::strcmpi(row_it->first.c_str(), "Hash") == 0) 
+                    witsml_rule.static_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::HashType, row_it->second));
+                else if (Utils::strcmpi(row_it->first.c_str(), "Key") == 0) 
+                    process_csv_indexes(row_it->second, witsml_rule.static_key_indexes);
+            }
+        }
+        else if (Utils::strcmpi(node_name, "VariableAttrs") == 0) {
+			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+
+                if (Utils::strcmpi(row_it->first.c_str(), "NodeName") == 0) 
+                    witsml_rule.variable_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TextType, row_it->second));
+                else if (Utils::strcmpi(row_it->first.c_str(), "Hash") == 0) 
+                    witsml_rule.variable_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::HashType, row_it->second));
+                else if (Utils::strcmpi(row_it->first.c_str(), "Key") == 0) 
+                    process_csv_indexes(row_it->second, witsml_rule.variable_key_indexes);
+                else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) 
+                    witsml_rule.variable_node_name.swap(row_it->second);
+            }
+        }
+        else if (Utils::strcmpi(node_name, "ColumnsData") == 0) {
+			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+
+                if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) witsml_rule.data_table_id.swap(row_it->second.c_str());
+            }
+        }
+        else if (Utils::strcmpi(node_name, "DataValues") == 0) {
+			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+
+                if (Utils::strcmpi(row_it->first.c_str(), "NodeName") == 0) 
+                    witsml_rule.data_field_name.swap(row_it->second);
+                else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) 
+                    witsml_rule.data_node_name.swap(row_it->second);
+            }
+        }
+    }
+
+    return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, char output_delimiter, std::vector<std::string> &rows)
+{
+    if (witsml.empty()) return false;
 	pugi::xml_document	xml_doc;
 
 	// parse xml
 	pugi::xml_parse_result result = xml_doc.load_buffer(witsml.c_str(), witsml.length());
 	if (!result) return false;
-
-	pugi::xml_node_iterator root = xml_doc.children().begin();
-	for (pugi::xml_node_iterator root_it = root->children().begin(); root_it != root->children().end(); ++root_it) {
+ 
+    // go though all root nodes (usually only one)
+	pugi::xml_node_iterator nodes = xml_doc.children().begin();
+	for (pugi::xml_node_iterator node = nodes->children().begin(); node != nodes->children().end(); ++node) {
 		
-		std::vector<TableData> tables;
-		if (!traverse_xml(root_it, std::pair<std::string, std::string>(), tables))
+        std::vector<std::string> static_values(witsml_rule.static_columns.size());
+        std::vector<std::vector<std::string> > variable_values;
+        std::vector<std::string> data_csv;
+
+        std::vector<Table> witsml_tables;
+		if (!traverse_xml(node, witsml_tables) && witsml_tables.empty())
 			continue;
 
-		// get UID (it always at first position)
-		assert(!tables.empty());
-		std::string uid(tables[0].at(0).second);
+        // for (size_t i = 0; i < witsml_tables.size(); i++)
+        //    PrintTable(witsml_tables[i]);
 
-		std::string log_NameWell;
-		std::string log_NameWellbore;
-        std::string logHeader_indexNote;
-		std::string logHeader_UomNamingSystem;
-		std::string commonData_NameSource;
-		std::vector<LogCurveInfoRec> logCurveInfo;
-		std::vector<std::string> logData;
+        ///////////////////////////////////////////////////////////////////////
+        // gather all values based on Witsml Rule Info
 
-		for (std::vector<TableData>::iterator table_it = tables.begin(); table_it != tables.end(); ++table_it) {
-			std::string group(table_it->GetName());
+		for (std::vector<Table>::iterator witsml_table = witsml_tables.begin(); witsml_table != witsml_tables.end(); ++witsml_table) {
+			const char *node_name = witsml_table->GetName();
 
-			// array variables
-			if (Utils::strcmpi(group.c_str(), "logCurveInfo") == 0) {	// columns
+            if (Utils::strcmpi(node_name, witsml_rule.variable_node_name.c_str()) == 0) {
+                std::vector<std::string> vv(witsml_rule.variable_columns.size());
 
-				unsigned int columnIndex;
-				std::string mnemonic;
-				std::string	mnemAlias;
-				std::string curveDescription;
-				std::string	startIndex;
-				std::string	endIndex;
+                for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
+                    int idx = witsml_rule.FindMetaVariableColumn(row->first.c_str());
+                    if (idx >= 0) vv[idx].swap(row->second);
+                }
 
-				for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-					if (Utils::strcmpi(row_it->first.c_str(), "columnIndex") == 0) columnIndex = atoi(row_it->second.c_str());
-					else if (Utils::strcmpi(row_it->first.c_str(), "startIndex") == 0) startIndex.assign(row_it->second);
-					else if (Utils::strcmpi(row_it->first.c_str(), "endIndex") == 0) endIndex.assign(row_it->second);
-					else if (Utils::strcmpi(row_it->first.c_str(), "mnemAlias") == 0) mnemAlias.assign(row_it->second);
-					else if (Utils::strcmpi(row_it->first.c_str(), "curveDescription") == 0) curveDescription.assign(row_it->second);
-					else if (Utils::strcmpi(row_it->first.c_str(), "mnemonic") == 0) mnemonic.assign(row_it->second);
+                for (size_t i = 0; i < vv.size(); i++) {
+                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::HashType)
+                        vv[i].swap(process_hash_field(vv, witsml_rule.variable_columns[i].hashed_indexes));
+                }
+
+                variable_values.push_back(vv);
+            }
+            else if (Utils::strcmpi(node_name, witsml_rule.data_node_name.c_str()) == 0) {
+				for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
+					if (Utils::strcmpi(row->first.c_str(), witsml_rule.data_field_name.c_str()) == 0)
+                        data_csv.push_back(row->second);
 				}
+            }
+            else {
+                for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
+                    int idx = witsml_rule.FindMetaStaticColumn(node_name, row->first.c_str());
+                    if (idx >= 0) static_values[idx].swap(row->second);
+                }
+            }
+        }
 
-				std::string	hash_postfix = hash(mnemonic);
+        for (size_t i = 0; i < static_values.size(); i++) {
+            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::HashType)
+                static_values[i].swap(process_hash_field(static_values, witsml_rule.static_columns[i].hashed_indexes));
+        }
 
-				LogCurveInfoRec rec(hash_postfix, columnIndex, curveDescription, mnemonic, mnemAlias, startIndex, endIndex);
-				logCurveInfo.push_back(rec);
-			}
-			else if (Utils::strcmpi(group.c_str(), "logData") == 0) {	// rows
-				for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-					logData.push_back(row_it->second);
-				}
-			}
-			// scalar variables
-			else if (Utils::strcmpi(group.c_str(), "log") == 0) {
-				for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-					if (Utils::strcmpi(row_it->first.c_str(), "NameWell") == 0) log_NameWell.assign(row_it->second);
-					else if (Utils::strcmpi(row_it->first.c_str(), "NameWellbore") == 0) log_NameWellbore.assign(row_it->second);
-				}
-			}
-			else if (Utils::strcmpi(group.c_str(), "logHeader") == 0) {
-				for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-					if (Utils::strcmpi(row_it->first.c_str(), "UomNamingSystem") == 0) logHeader_UomNamingSystem.assign(row_it->second);
-					else if (Utils::strcmpi(row_it->first.c_str(), "indexNote") == 0) logHeader_indexNote.assign(row_it->second);
-				}
-			}
-			else if (Utils::strcmpi(group.c_str(), "commonData") == 0) {
-				for (TableData::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-					if (Utils::strcmpi(row_it->first.c_str(), "NameSource") == 0) commonData_NameSource.assign(row_it->second);
-				}
-			}
-		}
-
-		if (logCurveInfo.empty())
+		if (variable_values.empty())
 			continue;
 
-		std::string hash_prefix = hash(log_NameWell, log_NameWellbore, logHeader_UomNamingSystem, commonData_NameSource);
+        ///////////////////////////////////////////////////////////////////////
+        // print Witsml as csv rows
 
-		for (std::vector<LogCurveInfoRec>::const_iterator info_it = logCurveInfo.begin() + 1; info_it != logCurveInfo.end(); ++info_it) {
-			std::stringstream csv_row;
+        // (-1) skip first Time column because the time is in each row
+		for (std::vector<std::vector<std::string> >::const_iterator column = variable_values.begin() + 1; column != variable_values.end(); ++column) {
 
-			csv_row << cColumnInfoTableId << output_delimiter			// table_id [ColumnInfo]
-					<< hash_prefix << output_delimiter					// hash prefix (identify Device)
-					<< info_it->hash << output_delimiter				// hash postfix (identify Parameter)
-					<< output_delimiter									// timestamp
-					<< output_delimiter									// data value
-                    << logHeader_indexNote << output_delimiter          // index note (time zone, actually)
-					<< info_it->uint_columnIndex << output_delimiter	// column index [shared]
-					<< info_it->text_columnIndex << output_delimiter	// column text
-				    << info_it->text_mnemonic << output_delimiter		// mnemonic text
-					<< info_it->mnemAlias_columnIndex << output_delimiter	// mnemAlias text
-					<< info_it->startIndex << output_delimiter			// start index
-					<< info_it->endIndex << output_delimiter			// end index
-					<< log_NameWell << output_delimiter					// name well
-					<< log_NameWellbore << output_delimiter				// name wellbore
-					<< logHeader_UomNamingSystem << output_delimiter	// Uom name system
-					<< commonData_NameSource << std::endl;				// name source
+            std::stringstream csv_row;
+            csv_row << witsml_rule.meta_table_id << output_delimiter;
 
+            for (size_t i = 0; i < static_values.size(); i++)
+                csv_row << static_values[i] << output_delimiter;
+
+            for (size_t i = 0; i < column->size(); i++)
+                csv_row << column->at(i) << output_delimiter;
+
+            csv_row << std::endl;
 			rows.push_back(csv_row.str());
 		}
 
-		std::vector<std::string> fieldsData;
-		for (std::vector<std::string>::const_iterator data_it = logData.begin(); data_it != logData.end(); ++data_it) {
+        // (+1) add one column for TableID
+        const size_t cOutputColumnCount = witsml_rule.static_columns.size() + witsml_rule.variable_columns.size() + 1;
 
-			fieldsData.clear();
-			const char logData_delimiter = ',';
-			Utils::SplitCsv(*data_it, logData_delimiter, fieldsData);
-			if (fieldsData.size() < logCurveInfo.size())
+		std::vector<std::string> data_values;
+		for (std::vector<std::string>::const_iterator data_row = data_csv.begin(); data_row != data_csv.end(); ++data_row) {
+
+			data_values.clear();
+			Utils::SplitCsv(*data_row, cCsvDelimiter, data_values);
+			if (data_values.size() < variable_values.size())
 				continue;
 
-			for (std::vector<LogCurveInfoRec>::const_iterator info_it = logCurveInfo.begin() + 1; info_it != logCurveInfo.end(); ++info_it) {
-				std::stringstream csv_row;
+            size_t filled_column_count = witsml_rule.static_key_indexes.size() + witsml_rule.variable_key_indexes.size() + 1 + 2;
+			for (size_t column_idx = 1; column_idx < variable_values.size(); column_idx++) {
+				
+                std::stringstream csv_row;
+                csv_row << witsml_rule.data_table_id << output_delimiter;
 
-				csv_row << cDataLogTableId << output_delimiter				// table_id [DataLog]
-						<< hash_prefix << output_delimiter					// hash prefix (identify Device)
-						<< info_it->hash << output_delimiter				// hash postfix (identify Parameter)
-						<< fieldsData[0] << output_delimiter				// timestamp
-						<< fieldsData[info_it->uint_columnIndex - 1] << output_delimiter	// data value
-                        << logHeader_indexNote << output_delimiter          // index note (time zone, actually)
-						<< output_delimiter									// column index [shared]
-						<< output_delimiter									// column text
-						<< output_delimiter									// mnemonic text
-						<< output_delimiter									// mnemAlias text
-						<< output_delimiter									// start index
-						<< output_delimiter									// end index
-						<< output_delimiter									// name well
-						<< output_delimiter									// name wellbore
-						<< output_delimiter									// Uom name system
-						<< std::endl;										// name source
+                for (size_t i = 0; i < witsml_rule.static_key_indexes.size(); i++)
+                    csv_row << static_values[witsml_rule.static_key_indexes[i]] << output_delimiter;
 
+                for (size_t i = 0; i < witsml_rule.variable_key_indexes.size(); i++)
+                    csv_row << variable_values[column_idx].at(witsml_rule.variable_key_indexes[i]) << output_delimiter;
+
+                csv_row << data_values[0] << output_delimiter;
+                csv_row << data_values[column_idx] << output_delimiter;
+
+                for (size_t i = filled_column_count; i < cOutputColumnCount; i++)
+                    csv_row << output_delimiter;
+
+                csv_row << std::endl;
 				rows.push_back(csv_row.str());
 			}
 		}
