@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WitsmlRule>
+
+  <!-- COMMENT: Witsml description XML (Witsml Rules)
+
+  Witsml file is treated as a set of columns (with attributes) plus 
+  rows with data values for each column for specific time. Column
+  attributes (meta data) consist of static and variable part. 
+  Static part is const for all columns (e.g. wellbore name), 
+  variable part is specific for each column (e.g. column name, measurement units).
+  
+  Original Witsml file (simplifyed):
+  
+  <Wellbore>
+    <CommonName>SuperWellbore</CommonName>
+  </Wellbore>
+  <ColumnsNode>
+    <name>column1</name>
+    <column_attr1>Time</column_attr1>
+    <column_attr2>unitless</column_attr2>
+    <column_attr3>2006-08-02 22:46:45.000</column_attr3>
+  </ColumnsNode>
+  <ColumnsNode>
+    <name>column2</name>
+    <column_attr1>Distance</column_attr1>
+    <column_attr2>meters</column_attr2>
+    <column_attr3>2006-08-02 22:46:45.000</column_attr3>
+  </ColumnsNode>
+  <ColumnsNode>
+    <name>columnN</name>
+    <column_attr1>Weight</column_attr1>
+    <column_attr2>kg</column_attr2>
+    <column_attr3>2006-08-02 22:46:45.000</column_attr3>
+  </ColumnsNode>
+  <DataNode>
+    <data>2006-08-02 22:46:45.000,0.11,0.21,0.31</data>
+    <data>2006-08-02 22:47:45.000,0.12,0.22,0.32</data>
+    <data>2006-08-02 22:48:45.000,0.13,0.23,0.33</data>
+    <data>2006-08-02 22:49:45.000,0.14,0.24,0.34</data>
+    <data>2006-08-02 22:50:45.000,0.15,0.25,0.35</data>
+  </DataNode>
+
+  Corresponding table structure (approx):
+  ______________________________________________
+            | column1 | column2 | ... | columnN |
+  00:01:00  | 0.11    | 0.21    | ... | 10.9    |
+  00:01:05  | 0.12    | 0.22    | ... | 10.8    |
+  00:01:10  | 0.13    | 0.23    | ... | 10.7    |
+  ______________________________________________|
+  
+  Table above transffered to ESP Adapter as a set of CSV rows (all rows have the same columns count):
+  
+  RowType_column;column1;CommonName;column_attr1;column_attr2;column_attr3;column_attr3;
+  RowType_column;column2;CommonName;column_attr1;column_attr2;column_attr3;column_attr3;
+  RowType_column;columnN;CommonName;column_attr1;column_attr2;column_attr3;column_attr3;
+  RowType_value;column1_key;00:01:00;0.11;;;;
+  RowType_value;column2_key;00:01:00;0.21;;;;
+  RowType_value;columnN_key;00:01:00;10.9;;;;
+  RowType_value;column1_key;00:01:00;0.11;;;;
+  RowType_value;column2_key;00:01:00;0.21;;;;
+  RowType_value;columnN_key;00:01:00;10.9;;;;
+  RowType_value;column1_key;00:01:00;0.11;;;;
+  RowType_value;column2_key;00:01:00;0.21;;;;
+  RowType_value;columnN_key;00:01:00;10.9;;;;
+  
+  So, we have the following description format for Witsml file:
+  <WitsmlRule>          - the root node
+  <ColumnsMeta>         - node with descriptions of all columns with attributes (meta data);
+    attr: tableId       - numeric identificator, identifies the row with column attributes, this id 
+                          is used by ESP Project to distingnish rows with columns meta info and rows 
+                          with data values  (in sample above 'RowType_column');
+    <StaticAttrs>       - static part of column attributes;
+      attr: key         - set of attributes which are part of primary key for static part 
+                          of column attributes (attributes positions, started with 1),
+                          (key attributes are attached to each data row);
+    <VariableAttrs>     - variable part of column attributes;
+      attr: key         - set of attributes which are part of primary key for variable part 
+                          of column attributes (attributes positions, started with 1),
+                          (key attributes are attached to each data row);
+      attr: collection  - the name of node with variable attributes (in sample above '<ColumnsNode>'),
+                          means 
+    <NodeName>          - the name of node with attribute value, can have the next values:
+                          <NodeName>log:NameWell</NodeName> - format: parent_node:node
+                          <NodeName>columnIndex</NodeName> - format: node (use 'collection' attr as parent_node)
+    <Hash>              - the special attribute, which is hash of specified 'normal' attributes -
+                          format: 1,2,3,5 - positions of attributes (started with 1) to hash up
+  <ColumnsData>         - node with data part description;
+  <DataValues>          - node with data values for columns in form of csv strings (in sample above '<DataNode>');
+    
+-->
+
+  <ColumnsMeta tableId="1001">
+    <StaticAttrs key="4,6">
+      <NodeName>log:NameWell</NodeName>
+      <NodeName>log:NameWellbore</NodeName>
+      <NodeName>logHeader:UomNamingSystem</NodeName>
+      <NodeName>logHeader:indexNote</NodeName>
+      <NodeName>commonData:NameSource</NodeName>
+      <Hash>1,2,3,5</Hash>
+    </StaticAttrs>
+    <VariableAttrs collection="logCurveInfo" key="7">
+      <NodeName>columnIndex</NodeName>
+      <NodeName>startIndex</NodeName>
+      <NodeName>endIndex</NodeName>
+      <NodeName>mnemAlias</NodeName>
+      <NodeName>curveDescription</NodeName>
+      <NodeName>mnemonic</NodeName>
+      <Hash>6</Hash>
+    </VariableAttrs>
+  </ColumnsMeta>
+  
+  <ColumnsData tableId="1002">
+    <DataValues collection="logData">
+      <NodeName>data</NodeName>
+    </DataValues>
+  </ColumnsData>
+
+</WitsmlRule>
