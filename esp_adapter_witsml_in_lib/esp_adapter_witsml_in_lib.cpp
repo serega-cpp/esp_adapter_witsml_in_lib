@@ -32,7 +32,7 @@ void* createAdapter()
 {
 	log().log_message("DllExport", Log::Info, "exported API::createAdapter() is called");
 
-    return new InputAdapter(';');
+    return new InputAdapter();
 }
 
 extern "C" DLLEXPORT
@@ -160,10 +160,8 @@ bool reset(void *adapter)
     InputAdapter *inputAdapterObject = (InputAdapter*)adapter;
 	log().log_message("DllExport", Log::Info, "exported API::reset() is called");
 
-	// Get parameters from ESP project
-    inputAdapterObject->_listenPort = (short int)::getConnectionParamInt64_t(inputAdapterObject->parameters,"ListenPort");
-    inputAdapterObject->_logMessageBody = ::getConnectionParamInt64_t(inputAdapterObject->parameters, "LogMessageBodyEnable") != 0;
-    
+    inputAdapterObject->readSettings();
+
 	if(inputAdapterObject->rowBuf)
         deleteConnectionRow(inputAdapterObject->rowBuf);
 
@@ -233,7 +231,7 @@ void  start(void* adapter)
 	log().log_message("DllExport", Log::Info, "exported API::start() is called");
     logMessage(inputAdapterObject->connectionCallBackReference, L_INFO, log().is_enabled() ? "Adapter has started (INTERNAL_LOG:ON)" : "Adapter has started (INTERNAL_LOG:OFF)");
 
-	inputAdapterObject->start(inputAdapterObject->_listenPort, inputAdapterObject->_logMessageBody);
+	inputAdapterObject->start();
 }
 
 /*

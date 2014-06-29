@@ -65,6 +65,43 @@ std::string process_hash_field(const std::vector<std::string> &fields, const std
     return hash(s[0], s[1], s[2], s[3]);
 }
 
+size_t rfind_one_of(const std::string &str, char ch1, char ch2)
+{
+    size_t pos = str.length();
+
+    while (pos-- > 0) {
+        if (str[pos] == '+' || str[pos] == '-')
+            break;
+    }
+
+    return pos;
+}
+
+std::string process_time_field(const std::string &field)
+{
+    size_t cMinDateTimeLength = 16;
+
+    size_t pos = rfind_one_of(field, '+', '-');
+    if (pos == size_t(-1) || pos < cMinDateTimeLength)
+        return field;
+
+    return field.substr(0, pos);
+}
+
+std::string process_timezone_field(const std::vector<std::string> &fields, const std::vector<size_t> &indexes)
+{
+    if (indexes.empty())
+        return std::string();
+
+    size_t cMinDateTimeLength = 16;
+
+    size_t pos = rfind_one_of(fields[indexes[0]], '+', '-');
+    if (pos == size_t(-1) || pos < cMinDateTimeLength)
+        return std::string();
+
+    return fields[indexes[0]].substr(pos);
+}
+
 void process_csv_indexes(const std::string &positions_csv, std::vector<size_t> &indexes)
 {
     std::vector<std::string> hashed_fields;
@@ -77,16 +114,16 @@ void process_csv_indexes(const std::string &positions_csv, std::vector<size_t> &
 
 WitsmlRule::Item::Item(WitsmlRule::Item::Type type, const std::string &value): type(type) {
 
-    if (type == WitsmlRule::Item::TextType) {
+    if (type == WitsmlRule::Item::TextType || type == WitsmlRule::Item::TimeType) {
         size_t sep_pos = value.find(":");
         if (sep_pos != std::string::npos) {
             name.swap(value.substr(0, sep_pos));
-            this->text_value.swap(value.substr(sep_pos + 1));
+            text_value.swap(value.substr(sep_pos + 1));
         }
-        else this->text_value = value;
+        else text_value = value;
     }
-    else if (type == WitsmlRule::Item::HashType) {
-        process_csv_indexes(value, hashed_indexes);
+    else if (type == WitsmlRule::Item::HashCalcType || type == WitsmlRule::Item::TzCalcType) {
+        process_csv_indexes(value, indexes);
     }
 }
 
@@ -95,7 +132,7 @@ int WitsmlRule::FindMetaStaticColumn(const char *node_name, const char *value_na
     for (size_t idx = 0; idx < static_columns.size(); idx++) {
         if (Utils::strcmpi(node_name, static_columns[idx].name.c_str()) == 0 &&
             Utils::strcmpi(value_name, static_columns[idx].text_value.c_str()) == 0) 
-            return idx;
+            return (int)idx;
     }
 
     return -1;
@@ -105,10 +142,37 @@ int WitsmlRule::FindMetaVariableColumn(const char *value_name) const
 {
     for (size_t idx = 0; idx < variable_columns.size(); idx++) {
         if (Utils::strcmpi(value_name, variable_columns[idx].text_value.c_str()) == 0) 
-            return idx;
+            return (int)idx;
     }
 
     return -1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+KeyGen::KeyGen(unsigned int salt)
+    : m_salt(salt)
+    , m_inc(0) 
+{
+}
+
+std::string KeyGen::GetNext() 
+{
+    unsigned int pk = m_inc.fetch_add(1) + 1;
+
+    std::stringstream keyss;
+    keyss << pk << m_salt;
+    return keyss.str();
+}
+
+KeyGen &GetKeyGen(unsigned int salt)
+{
+    // do not protect object creation in multithread environment, 
+    // because we sure, the creation will be performed in single
+    // thread before multithreaded using...
+    static KeyGen obj(salt);
+
+    return obj;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -168,40 +232,35 @@ bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
                 if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) witsml_rule.meta_table_id.swap(row_it->second.c_str());
             }
         }
-        else if (Utils::strcmpi(node_name, "StaticAttrs") == 0) {
+        else if (Utils::strcmpi(node_name, "StaticAttrs") == 0 || Utils::strcmpi(node_name, "VariableAttrs") == 0) {
+            bool is_static_node = node_name[11] == '\0';
+            std::vector<WitsmlRule::Item> &columns = is_static_node ? witsml_rule.static_columns : witsml_rule.variable_columns;
+            std::vector<size_t> &keys = is_static_node ? witsml_rule.static_key_indexes : witsml_rule.variable_key_indexes;
+
 			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
 
-                if (Utils::strcmpi(row_it->first.c_str(), "NodeName") == 0) 
-                    witsml_rule.static_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TextType, row_it->second));
+                if (Utils::strcmpi(row_it->first.c_str(), "PlainText") == 0) 
+                    columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TextType, row_it->second));
+                else if (Utils::strcmpi(row_it->first.c_str(), "Time") == 0) 
+                    columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TimeType, row_it->second));
                 else if (Utils::strcmpi(row_it->first.c_str(), "Hash") == 0) 
-                    witsml_rule.static_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::HashType, row_it->second));
+                    columns.push_back(WitsmlRule::Item(WitsmlRule::Item::HashCalcType, row_it->second));
+                else if (Utils::strcmpi(row_it->first.c_str(), "TimeZone") == 0) 
+                    columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TzCalcType, row_it->second));
                 else if (Utils::strcmpi(row_it->first.c_str(), "Key") == 0) 
-                    process_csv_indexes(row_it->second, witsml_rule.static_key_indexes);
-            }
-        }
-        else if (Utils::strcmpi(node_name, "VariableAttrs") == 0) {
-			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
+                    process_csv_indexes(row_it->second, keys);
 
-                if (Utils::strcmpi(row_it->first.c_str(), "NodeName") == 0) 
-                    witsml_rule.variable_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TextType, row_it->second));
-                else if (Utils::strcmpi(row_it->first.c_str(), "Hash") == 0) 
-                    witsml_rule.variable_columns.push_back(WitsmlRule::Item(WitsmlRule::Item::HashType, row_it->second));
-                else if (Utils::strcmpi(row_it->first.c_str(), "Key") == 0) 
-                    process_csv_indexes(row_it->second, witsml_rule.variable_key_indexes);
-                else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) 
-                    witsml_rule.variable_node_name.swap(row_it->second);
+                else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) {
+                    if (!is_static_node) witsml_rule.variable_node_name.swap(row_it->second);
+                }
             }
         }
         else if (Utils::strcmpi(node_name, "ColumnsData") == 0) {
 			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
 
-                if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) witsml_rule.data_table_id.swap(row_it->second.c_str());
-            }
-        }
-        else if (Utils::strcmpi(node_name, "DataValues") == 0) {
-			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-
-                if (Utils::strcmpi(row_it->first.c_str(), "NodeName") == 0) 
+                if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) 
+                    witsml_rule.data_table_id.swap(row_it->second.c_str());
+                else if (Utils::strcmpi(row_it->first.c_str(), "CsvText") == 0) 
                     witsml_rule.data_field_name.swap(row_it->second);
                 else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) 
                     witsml_rule.data_node_name.swap(row_it->second);
@@ -239,32 +298,47 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
         //    PrintTable(witsml_tables[i]);
 
         ///////////////////////////////////////////////////////////////////////
-        // gather all values based on Witsml Rule Info
+        // process Witsml based on Rule Info
 
 		for (std::vector<Table>::iterator witsml_table = witsml_tables.begin(); witsml_table != witsml_tables.end(); ++witsml_table) {
 			const char *node_name = witsml_table->GetName();
 
+            // process variable part of attributes
             if (Utils::strcmpi(node_name, witsml_rule.variable_node_name.c_str()) == 0) {
-                std::vector<std::string> vv(witsml_rule.variable_columns.size());
+                variable_values.resize(variable_values.size() + 1);
+                std::vector<std::string> &vv = variable_values.back();
+                vv.resize(witsml_rule.variable_columns.size());
 
+                // get all attributes
                 for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
                     int idx = witsml_rule.FindMetaVariableColumn(row->first.c_str());
                     if (idx >= 0) vv[idx].swap(row->second);
                 }
 
+                // process calculated attributes (in two passes, because there are dependencies
+                // between some calculated attributes, e.g. time and timezone)
                 for (size_t i = 0; i < vv.size(); i++) {
-                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::HashType)
-                        vv[i].swap(process_hash_field(vv, witsml_rule.variable_columns[i].hashed_indexes));
+                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TzCalcType)
+                        vv[i].swap(process_timezone_field(vv, witsml_rule.variable_columns[i].indexes));
                 }
+                for (size_t i = 0; i < vv.size(); i++) {
+                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TextType)
+                        continue;
 
-                variable_values.push_back(vv);
+                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::HashCalcType)
+                        vv[i].swap(process_hash_field(vv, witsml_rule.variable_columns[i].indexes));
+                    else if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TimeType)
+                        vv[i].swap(process_time_field(vv[i]));
+                }
             }
+            // process data values
             else if (Utils::strcmpi(node_name, witsml_rule.data_node_name.c_str()) == 0) {
 				for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
 					if (Utils::strcmpi(row->first.c_str(), witsml_rule.data_field_name.c_str()) == 0)
                         data_csv.push_back(row->second);
 				}
             }
+            // process static part of attributes
             else {
                 for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
                     int idx = witsml_rule.FindMetaStaticColumn(node_name, row->first.c_str());
@@ -273,36 +347,56 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
             }
         }
 
+        // process static calculated attributes (in two passes, because there are dependencies
+        // between some calculated attributes, e.g. time and timezone)
         for (size_t i = 0; i < static_values.size(); i++) {
-            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::HashType)
-                static_values[i].swap(process_hash_field(static_values, witsml_rule.static_columns[i].hashed_indexes));
+            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TzCalcType)
+                static_values[i].swap(process_timezone_field(static_values, witsml_rule.static_columns[i].indexes));
+        }
+        for (size_t i = 0; i < static_values.size(); i++) {
+            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TextType)
+                continue;
+
+            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::HashCalcType)
+                static_values[i].swap(process_hash_field(static_values, witsml_rule.static_columns[i].indexes));
+            else if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TimeType)
+                static_values[i].swap(process_time_field(static_values[i]));
         }
 
+        // if no columns found, skip this Witsml
 		if (variable_values.empty())
 			continue;
 
         ///////////////////////////////////////////////////////////////////////
         // print Witsml as csv rows
+        // note: row have to ends with value, not separator (e.g. v1;v2;...;vN)
 
-        // (-1) skip first Time column because the time is in each row
+        // create rows for ColumnMeta information (skip first column - Time)
 		for (std::vector<std::vector<std::string> >::const_iterator column = variable_values.begin() + 1; column != variable_values.end(); ++column) {
 
             std::stringstream csv_row;
-            csv_row << witsml_rule.meta_table_id << output_delimiter;
 
+            // put TableId (Meta)
+            csv_row << witsml_rule.meta_table_id;
+
+            // put Primary Key, required by ESP Input Window
+            csv_row << output_delimiter << GetKeyGen().GetNext();
+
+            // put Static attributes
             for (size_t i = 0; i < static_values.size(); i++)
-                csv_row << static_values[i] << output_delimiter;
+                csv_row << output_delimiter << static_values[i];
 
+            // put Variable attributes
             for (size_t i = 0; i < column->size(); i++)
-                csv_row << column->at(i) << output_delimiter;
+                csv_row << output_delimiter << column->at(i);
 
             csv_row << std::endl;
 			rows.push_back(csv_row.str());
 		}
 
-        // (+1) add one column for TableID
-        const size_t cOutputColumnCount = witsml_rule.static_columns.size() + witsml_rule.variable_columns.size() + 1;
+        const size_t cOutputColumnCount = witsml_rule.static_columns.size() + witsml_rule.variable_columns.size() + 2; // +2 columns: TableID, PK
 
+        // create rows for DataValues information
 		std::vector<std::string> data_values;
 		for (std::vector<std::string>::const_iterator data_row = data_csv.begin(); data_row != data_csv.end(); ++data_row) {
 
@@ -311,21 +405,30 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
 			if (data_values.size() < variable_values.size())
 				continue;
 
-            size_t filled_column_count = witsml_rule.static_key_indexes.size() + witsml_rule.variable_key_indexes.size() + 1 + 2;
+            size_t filled_column_count = witsml_rule.static_key_indexes.size() + witsml_rule.variable_key_indexes.size() + 2 + 2;
 			for (size_t column_idx = 1; column_idx < variable_values.size(); column_idx++) {
 				
                 std::stringstream csv_row;
-                csv_row << witsml_rule.data_table_id << output_delimiter;
 
+                // put TableId (Values)
+                csv_row << witsml_rule.data_table_id;
+
+                // put Primary Key, required by ESP Input Window
+                csv_row << output_delimiter << GetKeyGen().GetNext();
+
+                // put Static part of Key
                 for (size_t i = 0; i < witsml_rule.static_key_indexes.size(); i++)
-                    csv_row << static_values[witsml_rule.static_key_indexes[i]] << output_delimiter;
+                    csv_row << output_delimiter << static_values[witsml_rule.static_key_indexes[i]];
 
+                // put Variable part of Key
                 for (size_t i = 0; i < witsml_rule.variable_key_indexes.size(); i++)
-                    csv_row << variable_values[column_idx].at(witsml_rule.variable_key_indexes[i]) << output_delimiter;
+                    csv_row << output_delimiter << variable_values[column_idx].at(witsml_rule.variable_key_indexes[i]);
 
-                csv_row << data_values[0] << output_delimiter;
-                csv_row << data_values[column_idx] << output_delimiter;
+                // put value (time and value)
+                csv_row << output_delimiter << process_time_field(data_values[0]);
+                csv_row << output_delimiter << data_values[column_idx];
 
+                // put empty separators to reach cOutputColumnCount
                 for (size_t i = filled_column_count; i < cOutputColumnCount; i++)
                     csv_row << output_delimiter;
 

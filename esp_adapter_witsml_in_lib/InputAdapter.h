@@ -9,20 +9,23 @@
 
 #include "common/TcpServer.h"
 #include "cqueue.h"
+#include "WitsmlProcessor.h"
 
 #include "adapter/GenericAdapterInterface.h"
 
 struct InputAdapter
 {
-    InputAdapter(char csvDelimiter);
+    InputAdapter();
 
-	bool start(short int port, bool doDebugOutput = false);  //!< tell adapter to start
-	void stop();						                     //!< commands adapter to stop
+	bool start();                           //!< tells adapter to start
+	void stop();						    //!< tells adapter to stop
 
     int getColumnCount();
     void setState(int st);
     bool discoverTables();
     bool discover(std::string tableName);
+
+    void readSettings();
 
     void* connectionCallBackReference;
     void* schemaInformation;
@@ -35,12 +38,13 @@ struct InputAdapter
     int64_t _totalRows;
 
 	// Parameters
-    short int _listenPort;				//!< TCP server listening port number
-	char	  _csvDelimiter;			//!< csv reader filed separator character
-    bool      _logMessageBody;
+    short int   _listenPort;			  //!< TCP server listening port number
+	char	    _csvDelimiter;            //!< csv reader filed separator character
+    bool        _logMessageBody;          //!< enables debug print of received message body chunks
+    WitsmlRule  _witsmlRule;              //!< Witsml parse rules
 
-	bool      _discoveryMode;
-	bool      _stoppedState;			//!< used to stop adapter
+	bool        _discoveryMode;
+	bool        _stoppedState;			//!< used to stop adapter
 
 	TcpServer				_tcpServ;	//!< Listening TCP server object
 	cqueue <std::string>	_msgQueue;	//!< Internal Queue

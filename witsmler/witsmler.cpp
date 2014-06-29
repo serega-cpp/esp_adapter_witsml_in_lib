@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 		std::cerr << "-> mode 1: send one WitsML file many times:" << std::endl;
         // sample command line arguments: localhost 12345 example2.xml 1000
         std::cerr << "   $witsmler esp_host esp_port xml_file times_count" << std::endl;
-		std::cerr << "or" << std::endl;
+		std::cerr << std::endl;
 		std::cerr << "-> mode 2: generate & send WitsML files based on template:" << std::endl;
         // sample command line arguments: localhost 12345 template2.xml settings.xml
 		std::cerr << "   $witsmler esp_host esp_port xml_template settings_xml" << std::endl;

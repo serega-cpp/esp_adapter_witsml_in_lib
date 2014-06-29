@@ -30,5 +30,11 @@
       type="boolean"
       use="advanced"
       default="false"/>
-   </Section>
+    <Parameter id="WitsmlRulesFileName"
+      label="WitsmlRulesFileName"
+      descr="Path to file with Witsml parse rules"
+      type="string"
+      use="required"
+      default="dynamic.xml"/>
+  </Section>
 </Adapter>

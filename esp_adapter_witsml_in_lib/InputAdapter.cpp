@@ -1,10 +1,9 @@
 #include "InputAdapter.h"
 
 #include "TextMessageBuffer.h"
-#include "WitsmlProcessor.h"
 #include "log_message.h"
 
-InputAdapter::InputAdapter(char csvDelimiter): 
+InputAdapter::InputAdapter(): 
 	connectionCallBackReference(0),
 	schemaInformation(0),
 	parameters(0),
@@ -14,7 +13,7 @@ InputAdapter::InputAdapter(char csvDelimiter):
     _goodRows(0),
     _totalRows(0),
     _listenPort(12345),
-	_csvDelimiter(csvDelimiter),
+	_csvDelimiter(';'),
     _logMessageBody(false),
 	_discoveryMode(false),
 	_stoppedState(false),
@@ -23,16 +22,19 @@ InputAdapter::InputAdapter(char csvDelimiter):
 	log().log_message("InputAdapter", Log::Debug, "Adapter Object has created");
 }
 
-bool InputAdapter::start(short int port, bool logMessageBody)
+bool InputAdapter::start()
 {
-	log().log_message("InputAdapter", Log::Info, "Starting on %d port", port);
-    _logMessageBody = logMessageBody;
+	log().log_message("InputAdapter", Log::Info, "Starting on %d port", _listenPort);
 	_stoppedState = false;
 
-	if (!_tcpServ.Create(0, port)) {
+	if (!_tcpServ.Create(0, _listenPort)) {
 		log().log_message("InputAdapter", Log::Error, "Failed to create listen socket");
 		return false;
 	}
+
+    // initialize key generator with listen port value
+    // (so different adapters will have different keys)
+    GetKeyGen(_listenPort);
 
 	_accept_thread = boost::thread(&InputAdapter::accept_fn, this);
 	return true;
@@ -69,6 +71,27 @@ bool InputAdapter::discoverTables()
 bool InputAdapter::discover(std::string tableName)
 {
     return true;
+}
+
+void InputAdapter::readSettings()
+{
+	// Get parameters from ESP project
+    _listenPort = (short int)::getConnectionParamInt64_t(parameters,"ListenPort");
+    _logMessageBody = ::getConnectionParamInt64_t(parameters, "LogMessageBodyEnable") != 0;
+    _csvDelimiter = ';';
+
+    std::string witsml_rules_fname = ::getConnectionParamString(parameters,"WitsmlRulesFileName");
+    
+   	std::string witsml_rule_str;
+	if (!Utils::GetFileContent(witsml_rules_fname.c_str(), witsml_rule_str)) {
+        log().log_message("InputAdapter", Log::Error, "Failed open file with Witsml Rules [%s]", witsml_rules_fname.c_str());
+        logMessage(connectionCallBackReference, L_ERR, "Failed open file with Witsml Rules");
+	}
+
+	if (!process_witsml_rule(witsml_rule_str, _witsmlRule)) {
+        log().log_message("InputAdapter", Log::Error, "Witsml Rule file processing failed [%s]", witsml_rules_fname.c_str());
+        logMessage(connectionCallBackReference, L_ERR, "Witsml Rule file processing failed");
+	}
 }
 
 // Thread Function which is listening SOCKET for
@@ -123,7 +146,7 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 		buf[received] = '\0';
 
         if (_logMessageBody)
-            log().log_message("InputAdapter", Log::Debug, "<MSG> %s", buf);
+            log().log_message("InputAdapter", Log::Debug, "<MSG-CHUNK>%s</MSG-CHUNK>", buf);
 
 		xml_buffer.AddString(buf, received);
 
@@ -133,8 +156,9 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 		for (; !xml_msg.empty(); xml_msg = xml_buffer.GetNextMessage()) {
 			witsml_rows.clear();
 
-			if (!process_witsml(xml_msg, ';', witsml_rows)) {
+			if (!process_witsml(xml_msg, _witsmlRule, ';', witsml_rows)) {
 				log().log_message("InputAdapter", Log::Error, "Failed to parse incoming WitsML");
+                logMessage(connectionCallBackReference, L_ERR, "Failed to parse incoming WitsML");
                 
 				continue;
 			}

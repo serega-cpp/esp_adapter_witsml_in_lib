@@ -19,6 +19,9 @@
     <Filter Include="pugixml">
       <UniqueIdentifier>{ba0e5b58-398a-4036-86a9-95038ba6ca3a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sample Files">
+      <UniqueIdentifier>{05f77ecb-5115-49f1-b26d-6c3aa6a6edf0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -27,6 +30,9 @@
     <None Include="Makefile" />
     <None Include="..\pugixml\Makefile">
       <Filter>pugixml</Filter>
+    </None>
+    <None Include="dynamic.xml">
+      <Filter>Sample Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

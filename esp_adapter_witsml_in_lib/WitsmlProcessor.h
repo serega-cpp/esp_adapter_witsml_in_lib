@@ -7,11 +7,9 @@
 #include <utility>
 #include <sstream>
 
+#include <boost/atomic.hpp>
 #include "pugixml/pugixml.hpp"
 #include "common/Utils.h"
-
-// meta info: static, variable; data
-// Rule, Item
 
 struct WitsmlRule
 {
@@ -19,14 +17,16 @@ struct WitsmlRule
     {
         enum Type { 
             TextType, 
-            HashType 
+            TimeType,
+            HashCalcType,
+            TzCalcType
         };
 
         std::string         name;
         Type                type;
 
         std::string         text_value;
-        std::vector<size_t> hashed_indexes;
+        std::vector<size_t> indexes;
 
         Item(Type type, const std::string &value);
     };
@@ -36,8 +36,8 @@ struct WitsmlRule
     std::vector<Item>   static_columns;
     std::vector<size_t> static_key_indexes;
 
-    std::vector<Item>   variable_columns;
     std::string         variable_node_name;
+    std::vector<Item>   variable_columns;
     std::vector<size_t> variable_key_indexes;
 
     std::string         data_table_id;
@@ -62,6 +62,19 @@ public:
 private:
 	std::string m_table_name;
 };
+
+class KeyGen
+{
+public:
+    KeyGen(unsigned int salt);
+    std::string GetNext();
+
+private:
+    unsigned int m_salt;
+    boost::atomic<unsigned int> m_inc;
+};
+
+KeyGen &GetKeyGen(unsigned int salt = 0);
 
 bool traverse_xml(const pugi::xml_node_iterator &node, std::vector<Table> &tables);
 bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule);

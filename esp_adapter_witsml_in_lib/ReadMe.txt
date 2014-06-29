@@ -17,23 +17,19 @@ Build
 	 * open VS Command Prompt: 
 	   {start} -> {Visual Studio} -> {Command prompt x64 Win64}
 	 * go into directory where Boost was unpacked and run: 
-	   ...\>bootstrap.bat --with-libraries=thread
-	     - you can omit parameter --with-libraries=thread 
-	       (it'll build all boost libraries - recommended)
+	   ...\>bootstrap.bat
 	   and than: 
 	   ...\>b2 --toolset=msvc-10.0 architecture=x86 address-model=64
 	     - this will build Boost for x64, libraries will be in ./stage directory
-	 * copy Boost include files into Visual C++'s include directory
+	 * copy Boost include files into Visual C++'s standard include directory
 	   [...\>boost --> $(VCInstallDir)/include/boost]
 	   (it will allow to include Boost headers as: #include <boost/thread.hpp>
-	 * copy Boost lib files somewhere
-	   [...\>stage/lib --> $(VCInstallDir)/boost/lib64" as I did] 
+	 * copy Boost lib files into Visual C++'s standard lib directory
+	   [...\>stage/lib --> $(VCInstallDir)/lib/amd64" as I did] 
    [linux, 64-bit]
 	 * unpack Boost archive somewhere
-	 * under root user run ./bootstrap.sh --with-libraries=thread
-	   - you can omit parameter --with-libraries=thread 
-	     (it'll build all boost libraries - recommended)
-	   - you can use --show-libraries to view total list of binary libs
+	 * under root user run ./bootstrap.sh
+	   (you can use --show-libraries option to view total list of libs)
 	 * under root user run ./b2 install architecture=x86 address-model=64
 	   - this will automatically put Boost include files into /usr/local/include 
 	     and Boost libs into /usr/local/lib64 (or /usr/local/lib)
@@ -133,12 +129,14 @@ A. Logging facility
 		"InputAdapter", ERROR, "Failed to parse incoming WitsML"
 		"InputAdapter", INFO,  "Starting on XXXX port"
 		"InputAdapter", INFO,  "Adapter has stopped"
+        "InputAdapter", ERROR, "Failed open file with Witsml Rules"
+        "InputAdapter", ERROR, "Witsml Rule file processing failed"
 		"InputAdapter", INFO,  "Incoming connection acceptor has started"
 		"InputAdapter", INFO,  "New incoming connection has accepted"
 		"InputAdapter", INFO,  "Incoming connection acceptor has finished"
 		"InputAdapter", INFO,  "New client processor has started"
 		"InputAdapter", INFO,  "New client processor has finished"
-		"InputAdapter", DEBUG, "<MSG_BODY>"
+		"InputAdapter", DEBUG, "<MSG-CHUNK>"
 		"InputAdapter", DEBUG, "Adapter Object has created"
    2. Sybase ESP standard logging (can log only after was initialized by ESP):
      a) logs to screen in realtime (Console window) and to file in project 
@@ -162,3 +160,6 @@ A. Logging facility
 	    L_ERR  - "getNext::Pop failed"
 	    L_ERR  - "getNext::Wrong columns count"
 	    L_ERR  - "getNext::toRow failed"
+		L_ERR  - "Failed open file with Witsml Rules"
+		L_ERR  - "Witsml Rule file processing failed"
+		
