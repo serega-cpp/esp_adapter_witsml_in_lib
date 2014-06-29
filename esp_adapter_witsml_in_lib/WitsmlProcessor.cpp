@@ -117,8 +117,8 @@ WitsmlRule::Item::Item(WitsmlRule::Item::Type type, const std::string &value): t
     if (type == WitsmlRule::Item::TextType || type == WitsmlRule::Item::TimeType) {
         size_t sep_pos = value.find(":");
         if (sep_pos != std::string::npos) {
-            name.swap(value.substr(0, sep_pos));
-            text_value.swap(value.substr(sep_pos + 1));
+            name.assign(value.substr(0, sep_pos));
+            text_value.assign(value.substr(sep_pos + 1));
         }
         else text_value = value;
     }
@@ -229,7 +229,7 @@ bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
 
         if (Utils::strcmpi(node_name, "ColumnsMeta") == 0) {
 			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
-                if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) witsml_rule.meta_table_id.swap(row_it->second.c_str());
+                if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) witsml_rule.meta_table_id.swap(row_it->second);
             }
         }
         else if (Utils::strcmpi(node_name, "StaticAttrs") == 0 || Utils::strcmpi(node_name, "VariableAttrs") == 0) {
@@ -259,7 +259,7 @@ bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
 			for (Table::iterator row_it = table_it->begin(); row_it != table_it->end(); ++row_it) {
 
                 if (Utils::strcmpi(row_it->first.c_str(), "tableId") == 0) 
-                    witsml_rule.data_table_id.swap(row_it->second.c_str());
+                    witsml_rule.data_table_id.swap(row_it->second);
                 else if (Utils::strcmpi(row_it->first.c_str(), "CsvText") == 0) 
                     witsml_rule.data_field_name.swap(row_it->second);
                 else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) 
@@ -319,16 +319,16 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
                 // between some calculated attributes, e.g. time and timezone)
                 for (size_t i = 0; i < vv.size(); i++) {
                     if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TzCalcType)
-                        vv[i].swap(process_timezone_field(vv, witsml_rule.variable_columns[i].indexes));
+                        vv[i].assign(process_timezone_field(vv, witsml_rule.variable_columns[i].indexes));
                 }
                 for (size_t i = 0; i < vv.size(); i++) {
                     if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TextType)
                         continue;
 
                     if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::HashCalcType)
-                        vv[i].swap(process_hash_field(vv, witsml_rule.variable_columns[i].indexes));
+                        vv[i].assign(process_hash_field(vv, witsml_rule.variable_columns[i].indexes));
                     else if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TimeType)
-                        vv[i].swap(process_time_field(vv[i]));
+                        vv[i].assign(process_time_field(vv[i]));
                 }
             }
             // process data values
@@ -351,16 +351,16 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
         // between some calculated attributes, e.g. time and timezone)
         for (size_t i = 0; i < static_values.size(); i++) {
             if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TzCalcType)
-                static_values[i].swap(process_timezone_field(static_values, witsml_rule.static_columns[i].indexes));
+                static_values[i].assign(process_timezone_field(static_values, witsml_rule.static_columns[i].indexes));
         }
         for (size_t i = 0; i < static_values.size(); i++) {
             if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TextType)
                 continue;
 
             if (witsml_rule.static_columns[i].type == WitsmlRule::Item::HashCalcType)
-                static_values[i].swap(process_hash_field(static_values, witsml_rule.static_columns[i].indexes));
+                static_values[i].assign(process_hash_field(static_values, witsml_rule.static_columns[i].indexes));
             else if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TimeType)
-                static_values[i].swap(process_time_field(static_values[i]));
+                static_values[i].assign(process_time_field(static_values[i]));
         }
 
         // if no columns found, skip this Witsml
