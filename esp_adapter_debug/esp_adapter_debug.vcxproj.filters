@@ -33,6 +33,9 @@
     <ClCompile Include="..\pugixml\pugixml.cpp">
       <Filter>pugixml</Filter>
     </ClCompile>
+    <ClCompile Include="..\esp_adapter_witsml_in_lib\log_message.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\esp_adapter_witsml_in_lib\WitsmlProcessor.h">
@@ -46,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="..\pugixml\pugixml.hpp">
       <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\esp_adapter_witsml_in_lib\log_message.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

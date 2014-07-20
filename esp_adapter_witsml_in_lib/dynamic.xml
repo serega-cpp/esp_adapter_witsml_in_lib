@@ -96,8 +96,9 @@
     <Time>              - the calculated attribute, processes DateTime by removing trailing timezone (e.g. "+02:00") -
                           format: "parent_node:node" (e.g. "commonData:dTimStamp")
                           format: "node" (use 'collection' attr as parent_node)
-    <TimeZone>          - the calculated attribute, processes reffered DateTime by extracting trailing timezone (e.g. "+02:00") -
-                          format: "3" - position of attribute of DateTime type (started with 1)
+    <TimeZone>          - the calculated attribute, processes DateTime by extracting trailing timezone (e.g. "+02:00") -
+                          format: "parent_node:node" (e.g. "commonData:dTimStamp")
+                          format: "node" (use 'collection' attr as parent_node)
   <ColumnsData>         - desribes data in columns;
     attr: tableId       - numeric identificator, identifies the row with data values, this id 
                           is used by ESP Project to distingnish rows with columns meta data and rows 
@@ -131,7 +132,7 @@
       <PlainText>columnIndex</PlainText>
       <Time>startIndex</Time>
       <Time>endIndex</Time>
-      <TimeZone>2</TimeZone>
+      <TimeZone>startIndex</TimeZone>
       <PlainText>mnemAlias</PlainText>
       <PlainText>curveDescription</PlainText>
       <PlainText>mnemonic</PlainText>

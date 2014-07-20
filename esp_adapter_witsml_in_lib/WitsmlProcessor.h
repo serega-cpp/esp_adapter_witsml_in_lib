@@ -18,8 +18,8 @@ struct WitsmlRule
         enum Type { 
             TextType, 
             TimeType,
-            HashCalcType,
-            TzCalcType
+            TzType,
+            HashCalcType
         };
 
         std::string         name;

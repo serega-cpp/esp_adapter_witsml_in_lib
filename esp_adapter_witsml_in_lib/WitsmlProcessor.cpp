@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#include <iostream>
 
 #include "pugixml/pugixml.hpp"
 #include "log_message.h"
@@ -14,10 +15,6 @@ const char cCsvDelimiter = ',';
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _DEBUG
-
-#include <iostream>
-
 void PrintTable(const Table &table)
 {
     std::cout << table.GetName() << "[" << table.size() << "]" << std::endl; 
@@ -25,8 +22,6 @@ void PrintTable(const Table &table)
     for (size_t j = 0; j < table.size(); j++)
         std::cout << "  " << table.at(j).first << ":" << table.at(j).second << std::endl;
 }
-
-#endif // _DEBUG
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -59,8 +54,11 @@ std::string process_hash_field(const std::vector<std::string> &fields, const std
 {
     std::string s[4];
 
-    for (size_t i = 0; i < hashed_indexes.size(); i++)
+    for (size_t i = 0; i < hashed_indexes.size(); i++) {
+        if (hashed_indexes[i] >= fields.size())
+            return std::string();
         s[i % 4].append(fields[hashed_indexes[i]]);
+    }
 
     return hash(s[0], s[1], s[2], s[3]);
 }
@@ -88,18 +86,15 @@ std::string process_time_field(const std::string &field)
     return field.substr(0, pos);
 }
 
-std::string process_timezone_field(const std::vector<std::string> &fields, const std::vector<size_t> &indexes)
+std::string process_timezone_field(const std::string &field)
 {
-    if (indexes.empty())
-        return std::string();
-
     size_t cMinDateTimeLength = 16;
 
-    size_t pos = rfind_one_of(fields[indexes[0]], '+', '-');
+    size_t pos = rfind_one_of(field, '+', '-');
     if (pos == size_t(-1) || pos < cMinDateTimeLength)
         return std::string();
 
-    return fields[indexes[0]].substr(pos);
+    return field.substr(pos);
 }
 
 void process_csv_indexes(const std::string &positions_csv, std::vector<size_t> &indexes)
@@ -114,7 +109,7 @@ void process_csv_indexes(const std::string &positions_csv, std::vector<size_t> &
 
 WitsmlRule::Item::Item(WitsmlRule::Item::Type type, const std::string &value): type(type) {
 
-    if (type == WitsmlRule::Item::TextType || type == WitsmlRule::Item::TimeType) {
+    if (type == WitsmlRule::Item::TextType || type == WitsmlRule::Item::TimeType || type == WitsmlRule::Item::TzType) {
         size_t sep_pos = value.find(":");
         if (sep_pos != std::string::npos) {
             name.swap(value.substr(0, sep_pos));
@@ -122,30 +117,9 @@ WitsmlRule::Item::Item(WitsmlRule::Item::Type type, const std::string &value): t
         }
         else text_value = value;
     }
-    else if (type == WitsmlRule::Item::HashCalcType || type == WitsmlRule::Item::TzCalcType) {
+    else if (type == WitsmlRule::Item::HashCalcType) {
         process_csv_indexes(value, indexes);
     }
-}
-
-int WitsmlRule::FindMetaStaticColumn(const char *node_name, const char *value_name) const
-{
-    for (size_t idx = 0; idx < static_columns.size(); idx++) {
-        if (Utils::strcmpi(node_name, static_columns[idx].name.c_str()) == 0 &&
-            Utils::strcmpi(value_name, static_columns[idx].text_value.c_str()) == 0) 
-            return (int)idx;
-    }
-
-    return -1;
-}
-
-int WitsmlRule::FindMetaVariableColumn(const char *value_name) const
-{
-    for (size_t idx = 0; idx < variable_columns.size(); idx++) {
-        if (Utils::strcmpi(value_name, variable_columns[idx].text_value.c_str()) == 0) 
-            return (int)idx;
-    }
-
-    return -1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -221,6 +195,7 @@ bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
 	if (!traverse_xml(rule, tables) && tables.empty())
 		return false;
 
+    // Uncomment to print xml-based tables to stdout
     // for (size_t i = 0; i < tables.size(); i++)
     //    PrintTable(tables[i]);
 
@@ -233,7 +208,7 @@ bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
             }
         }
         else if (Utils::strcmpi(node_name, "StaticAttrs") == 0 || Utils::strcmpi(node_name, "VariableAttrs") == 0) {
-            bool is_static_node = node_name[11] == '\0';
+            bool is_static_node = node_name[11] == '\0'; // Dirty hack!
             std::vector<WitsmlRule::Item> &columns = is_static_node ? witsml_rule.static_columns : witsml_rule.variable_columns;
             std::vector<size_t> &keys = is_static_node ? witsml_rule.static_key_indexes : witsml_rule.variable_key_indexes;
 
@@ -246,12 +221,28 @@ bool process_witsml_rule(const std::string &rule_text, WitsmlRule &witsml_rule)
                 else if (Utils::strcmpi(row_it->first.c_str(), "Hash") == 0) 
                     columns.push_back(WitsmlRule::Item(WitsmlRule::Item::HashCalcType, row_it->second));
                 else if (Utils::strcmpi(row_it->first.c_str(), "TimeZone") == 0) 
-                    columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TzCalcType, row_it->second));
+                    columns.push_back(WitsmlRule::Item(WitsmlRule::Item::TzType, row_it->second));
                 else if (Utils::strcmpi(row_it->first.c_str(), "Key") == 0) 
                     process_csv_indexes(row_it->second, keys);
 
                 else if (Utils::strcmpi(row_it->first.c_str(), "collection") == 0) {
                     if (!is_static_node) witsml_rule.variable_node_name.swap(row_it->second);
+                }
+            }
+
+            for (size_t i = 0; i < keys.size(); i++) {
+                if (keys[i] >= columns.size())
+                    log().log_message("WitsmlProcessor", Log::Error,
+                        "WitsmlRules parser: Key index for %s attrs out of range: %d",
+                        is_static_node ? "static" : "variable", keys[i]);
+            }
+
+            for (size_t i = 0; i < columns.size(); i++) {
+                for (int j = 0; j < columns[i].indexes.size(); j++) {
+                    if (columns[i].indexes[j] >= columns.size())
+                        log().log_message("WitsmlProcessor", Log::Error,
+                            "WitsmlRules parser: Hash index for %s attrs out of range %d",
+                            is_static_node ? "static" : "variable", columns[i].indexes[j]);
                 }
             }
         }
@@ -294,6 +285,7 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
 		if (!traverse_xml(node, witsml_tables) && witsml_tables.empty())
 			continue;
 
+        // Uncomment to print xml-based tables to stdout
         // for (size_t i = 0; i < witsml_tables.size(); i++)
         //    PrintTable(witsml_tables[i]);
 
@@ -309,26 +301,25 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
                 std::vector<std::string> &vv = variable_values.back();
                 vv.resize(witsml_rule.variable_columns.size());
 
-                // get all attributes
+                // get all attributes except HASH which is calculated on second pass
                 for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
-                    int idx = witsml_rule.FindMetaVariableColumn(row->first.c_str());
-                    if (idx >= 0) vv[idx].swap(row->second);
+
+                    for (size_t idx = 0; idx < witsml_rule.variable_columns.size(); idx++) {
+                        if (Utils::strcmpi(row->first.c_str(), witsml_rule.variable_columns[idx].text_value.c_str()) == 0) {
+                            if (witsml_rule.variable_columns[idx].type == WitsmlRule::Item::TextType)
+                                vv[idx].assign(row->second);
+                            else if (witsml_rule.variable_columns[idx].type == WitsmlRule::Item::TimeType)
+                                vv[idx].swap(process_time_field(row->second));
+                            else if (witsml_rule.variable_columns[idx].type == WitsmlRule::Item::TzType)
+                                vv[idx].swap(process_timezone_field(row->second));
+                        }
+                    }
                 }
 
-                // process calculated attributes (in two passes, because there are dependencies
-                // between some calculated attributes, e.g. time and timezone)
+                // process calculated HASH attributes 
                 for (size_t i = 0; i < vv.size(); i++) {
-                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TzCalcType)
-                        vv[i].swap(process_timezone_field(vv, witsml_rule.variable_columns[i].indexes));
-                }
-                for (size_t i = 0; i < vv.size(); i++) {
-                    if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TextType)
-                        continue;
-
                     if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::HashCalcType)
                         vv[i].swap(process_hash_field(vv, witsml_rule.variable_columns[i].indexes));
-                    else if (witsml_rule.variable_columns[i].type == WitsmlRule::Item::TimeType)
-                        vv[i].swap(process_time_field(vv[i]));
                 }
             }
             // process data values
@@ -340,27 +331,28 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
             }
             // process static part of attributes
             else {
+                // get all attributes except HASH which is calculated on second pass
                 for (Table::iterator row = witsml_table->begin(); row != witsml_table->end(); ++row) {
-                    int idx = witsml_rule.FindMetaStaticColumn(node_name, row->first.c_str());
-                    if (idx >= 0) static_values[idx].swap(row->second);
+                    for (size_t idx = 0; idx < witsml_rule.static_columns.size(); idx++) {
+                        if (Utils::strcmpi(node_name, witsml_rule.static_columns[idx].name.c_str()) == 0 &&
+                            Utils::strcmpi(row->first.c_str(), witsml_rule.static_columns[idx].text_value.c_str()) == 0) {
+
+                            if (witsml_rule.static_columns[idx].type == WitsmlRule::Item::TextType)
+                                static_values[idx].assign(row->second);
+                            else if (witsml_rule.static_columns[idx].type == WitsmlRule::Item::TimeType)
+                                static_values[idx].swap(process_time_field(row->second));
+                            else if (witsml_rule.static_columns[idx].type == WitsmlRule::Item::TzType)
+                                static_values[idx].swap(process_timezone_field(row->second));
+                        }
+                    }
                 }
             }
         }
 
-        // process static calculated attributes (in two passes, because there are dependencies
-        // between some calculated attributes, e.g. time and timezone)
+        // process static HASH calculated attributes
         for (size_t i = 0; i < static_values.size(); i++) {
-            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TzCalcType)
-                static_values[i].swap(process_timezone_field(static_values, witsml_rule.static_columns[i].indexes));
-        }
-        for (size_t i = 0; i < static_values.size(); i++) {
-            if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TextType)
-                continue;
-
             if (witsml_rule.static_columns[i].type == WitsmlRule::Item::HashCalcType)
                 static_values[i].swap(process_hash_field(static_values, witsml_rule.static_columns[i].indexes));
-            else if (witsml_rule.static_columns[i].type == WitsmlRule::Item::TimeType)
-                static_values[i].swap(process_time_field(static_values[i]));
         }
 
         // if no columns found, skip this Witsml
@@ -417,12 +409,20 @@ bool process_witsml(const std::string &witsml, const WitsmlRule &witsml_rule, ch
                 csv_row << output_delimiter << GetKeyGen().GetNext();
 
                 // put Static part of Key
-                for (size_t i = 0; i < witsml_rule.static_key_indexes.size(); i++)
-                    csv_row << output_delimiter << static_values[witsml_rule.static_key_indexes[i]];
+                for (size_t i = 0; i < witsml_rule.static_key_indexes.size(); i++) {
+                    if (witsml_rule.static_key_indexes[i] < static_values.size())
+                        csv_row << output_delimiter << static_values[witsml_rule.static_key_indexes[i]];
+                    else
+                        csv_row << output_delimiter << "";
+                }
 
                 // put Variable part of Key
-                for (size_t i = 0; i < witsml_rule.variable_key_indexes.size(); i++)
-                    csv_row << output_delimiter << variable_values[column_idx].at(witsml_rule.variable_key_indexes[i]);
+                for (size_t i = 0; i < witsml_rule.variable_key_indexes.size(); i++) {
+                    if (witsml_rule.variable_key_indexes[i] < variable_values.size())
+                        csv_row << output_delimiter << variable_values[column_idx].at(witsml_rule.variable_key_indexes[i]);
+                    else
+                        csv_row << output_delimiter << "";
+                }
 
                 // put value (time and value)
                 csv_row << output_delimiter << process_time_field(data_values[0]);

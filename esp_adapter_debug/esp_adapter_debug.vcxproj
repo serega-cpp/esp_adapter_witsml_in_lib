@@ -140,12 +140,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\common\Utils.cpp" />
+    <ClCompile Include="..\esp_adapter_witsml_in_lib\log_message.cpp" />
     <ClCompile Include="..\esp_adapter_witsml_in_lib\WitsmlProcessor.cpp" />
     <ClCompile Include="..\pugixml\pugixml.cpp" />
     <ClCompile Include="esp_adapter_debug.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\Utils.h" />
+    <ClInclude Include="..\esp_adapter_witsml_in_lib\log_message.h" />
     <ClInclude Include="..\esp_adapter_witsml_in_lib\WitsmlProcessor.h" />
     <ClInclude Include="..\pugixml\pugiconfig.hpp" />
     <ClInclude Include="..\pugixml\pugixml.hpp" />

@@ -74,6 +74,13 @@ time_t StringToDatetime(const char *time_str)
     return mktime(&rec);
 }
 
+void DumpGeneratedXml(const std::string &xml_body, time_t xml_time)
+{
+    char dbg_file_name[32];
+    sprintf(dbg_file_name, "wtsm_%d.xml", (int)xml_time);
+    Utils::SetFileContent(dbg_file_name, std::vector<std::string>(1, xml_body));
+}
+
 struct SettingsRec
 {
     struct ColumnRec 
@@ -145,6 +152,7 @@ bool GenerateXml(std::string &xml, const SettingsRec &settings, time_t begin_tim
 {
     if (begin_time == 0) begin_time = settings.begin_time;
     if (end_time == 0) end_time = settings.end_time;
+    if (begin_time > end_time) return false;
 
     std::string data_part;
 
@@ -250,11 +258,14 @@ int main(int argc, char *argv[])
         for (time_t begin_time = settings.begin_time; begin_time < settings.end_time; begin_time += settings.time_file_period_sec) {
             time_t end_time = std::min(begin_time + settings.time_file_period_sec, settings.end_time);
 
-            std::cerr << std::endl << "Info: Sending data to ESP (" 
-                << int((end_time - begin_time + 1) / settings.time_step_sec) << " rows)" << std::endl;
-
             std::string generated_file_body(file_body);
-            GenerateXml(generated_file_body, settings, begin_time, end_time);
+            if (!GenerateXml(generated_file_body, settings, begin_time, end_time)) {
+                std::cerr << "Error: GenerateXml failed at " << DatetimeToString(begin_time) << "." << std::endl;
+                continue;
+            }
+
+            // Uncomment to save generated xml file into current directory
+            // DumpGeneratedXml(generated_file_body, begin_time);
 
 		    if (!esp_client.Send(generated_file_body.c_str(), generated_file_body.length()) || !esp_client.Send("&&", 2)) {
 			    std::cerr << "Error: send to esp failed" << std::endl;
