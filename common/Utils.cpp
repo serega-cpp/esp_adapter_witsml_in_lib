@@ -218,8 +218,8 @@ namespace Utils
 
 	unsigned short Crc16(const unsigned char *block, size_t len)
 	{
-		// Name  : CRC-16 CCITT
-		// Poly  : 0x1021    x^16 + x^12 + x^5 + 1
+		// Name: CRC-16 CCITT
+		// Poly: 0x1021 x^16 + x^12 + x^5 + 1
 		unsigned short crc = 0xFFFF;
  
 		while (len--) {
@@ -256,32 +256,32 @@ namespace Utils
 		}
 		while ( f && (f == l) );
 
-	    return(f - l);
+		return(f - l);
 	}
 
-    bool GetFileContent(const char *file_name, std::string &content) 
-    {
-	    std::ifstream ifile(file_name);
-	    if (!ifile.is_open())
-		    return false;
+	bool GetFileContent(const char *file_name, std::string &content) 
+	{
+		std::ifstream ifile(file_name);
+		if (!ifile.is_open())
+			return false;
 
-	    std::stringstream buffer;
-	    buffer << ifile.rdbuf();
+		std::stringstream buffer;
+		buffer << ifile.rdbuf();
 
-	    content.assign(buffer.str());
-	    return true;
-    } 
+		content.assign(buffer.str());
+		return true;
+	}
 
-    bool SetFileContent(const char *file_name, const std::vector<std::string> &content)
-    {
-	    std::ofstream ofile(file_name);
-	    if (!ofile.is_open())
-		    return false;
+	bool SetFileContent(const char *file_name, const std::vector<std::string> &content)
+	{
+		std::ofstream ofile(file_name);
+		if (!ofile.is_open())
+			return false;
 
-        for (size_t i = 0; i < content.size(); i++)
-            ofile << content[i];
+		for (size_t i = 0; i < content.size(); i++)
+			ofile << content[i];
 
-	    return true;
-    }
+		return true;
+	}
 
 } // namespace Utils

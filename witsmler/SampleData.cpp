@@ -106,8 +106,8 @@ double SampleData::GenerateValue(time_t dst_time)
 {
 	double value;
 	
-    if (!m_sample_fields.GetValue(dst_time, value))
+	if (!m_sample_fields.GetValue(dst_time, value))
 		value = -1.0;
-    
-    return value;
+	
+	return value;
 }

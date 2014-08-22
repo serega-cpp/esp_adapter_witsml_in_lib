@@ -12,7 +12,7 @@ public:
 	~TcpConnectedClient();
 
 	bool Send(const char * data, size_t size);
-	int  Recv(char * data, size_t size);
+	int Recv(char * data, size_t size);
 
 	bool IsConnected();
 

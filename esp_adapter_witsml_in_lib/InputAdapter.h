@@ -15,45 +15,46 @@
 
 struct InputAdapter
 {
-    InputAdapter();
+	InputAdapter();
 
-	bool start();                           //!< tells adapter to start
-	void stop();						    //!< tells adapter to stop
+	bool start(); //!< orders adapter to start
+	void stop(); //!< orders adapter to stop
 
-    int getColumnCount();
-    void setState(int st);
-    bool discoverTables();
-    bool discover(std::string tableName);
+	int getColumnCount();
+	void setState(int st);
+	bool discoverTables();
+	bool discover(std::string tableName);
 
-    void readSettings();
+	void readSettings();
 
-    void* connectionCallBackReference;
-    void* schemaInformation;
-    void* parameters;
-    void* rowBuf;
-    void* errorObjIdentifier;
+	void* connectionCallBackReference;
+	void* schemaInformation;
+	void* parameters;
+	void* rowBuf;
+	void* errorObjIdentifier;
 
-    int64_t _badRows;
-    int64_t _goodRows;
-    int64_t _totalRows;
+	int64_t _badRows;
+	int64_t _goodRows;
+	int64_t _totalRows;
 
 	// Parameters
-    short int   _listenPort;			  //!< TCP server listening port number
-	char	    _csvDelimiter;            //!< csv reader filed separator character
-    bool        _logMessageBody;          //!< enables debug print of received message body chunks
-    WitsmlRule  _witsmlRule;              //!< Witsml parse rules
+	short int _listenPort; //!< TCP server listening port number
+	char _csvDelimiter; //!< csv reader filed separator character
+	bool _logMessageBody; //!< enables debug print of received message body chunks
+	WitsmlRule _witsmlRule; //!< Witsml parse rules
 
-	bool        _discoveryMode;
-	bool        _stoppedState;			//!< used to stop adapter
+	bool _discoveryMode;
+	bool _stoppedState; //!< used to stop adapter
 
-	TcpServer				_tcpServ;	//!< Listening TCP server object
-	cqueue <std::string>	_msgQueue;	//!< Internal Queue
+	TcpServer _tcpServ; //!< Listening TCP server object
+	cqueue <std::string> _msgQueue;
 	
 	boost::thread _accept_thread;
 	boost::thread _client_thread;
 
-	void accept_fn();							//!< Listenig thread function
+	void accept_fn(); //!< Listenig thread function
 	void client_fn(TcpConnectedClient *client); //!< One client processin function
 };
 
 #endif // __INPUTADAPTER_H__
+

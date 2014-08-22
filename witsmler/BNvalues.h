@@ -18,7 +18,7 @@ public:
 	bool GetValue(time_t date, double &value);
 
 	time_t GetFirstDate() { return m_bn_elements.empty() ? 0 : m_bn_elements[0].bn_date; }
-	time_t GetLastDate()  { return m_bn_elements.empty() ? 0 : m_bn_elements[m_bn_elements.size() - 1].bn_date; }
+	time_t GetLastDate() { return m_bn_elements.empty() ? 0 : m_bn_elements[m_bn_elements.size() - 1].bn_date; }
 
 
 private:

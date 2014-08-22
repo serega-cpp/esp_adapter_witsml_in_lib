@@ -59,7 +59,7 @@ namespace Utils
 
 	///////////////////////////////////////////////////////////////////////////////
 	template <typename T>
-	void   SplitCsv(const std::basic_string<T> &s, T c, std::vector<std::basic_string<T> > &v);
+	void SplitCsv(const std::basic_string<T> &s, T c, std::vector<std::basic_string<T> > &v);
 
 	//////////////////////////////////////////////////////////////////////////
 	size_t SplitCsv(char *s, const char sep, char **toks, size_t toks_size);
@@ -78,8 +78,8 @@ namespace Utils
 	char * itoa(unsigned int val, char *buf, int base);
 	int strcmpi(const char *s1, const char *s2);
 
-    bool GetFileContent(const char *file_name, std::string &content);
-    bool SetFileContent(const char *file_name, const std::vector<std::string> &content);
+	bool GetFileContent(const char *file_name, std::string &content);
+	bool SetFileContent(const char *file_name, const std::vector<std::string> &content);
 
 } // namespace Utils
 

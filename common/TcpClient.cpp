@@ -39,8 +39,8 @@ bool TcpClient::Send(const char * data, size_t size)
 
 bool TcpClient::IsConnected()
 {
-    return m_server_sock != INVALID_SOCKET;
-}	
+	return m_server_sock != INVALID_SOCKET;
+}
 
 bool TcpClient::set_address(const char *hostname, unsigned short int portnum, sockaddr_in *adr)
 {

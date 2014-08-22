@@ -17,8 +17,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-    std::vector<std::string> rows;
-    if (!process_witsml(witsml_str, ';', rows)) {
+	std::vector<std::string> rows;
+	if (!process_witsml(witsml_str, ';', rows)) {
 		std::cerr << "Error: Witsml file processing failed" << std::endl;
 		return 1;
 	}
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 	}
 
 #else
-    GetKeyGen(1978);
+	GetKeyGen(1978);
 
 	std::string witsml_rule_str;
 	if (!Utils::GetFileContent(cDynamicXml, witsml_rule_str)) {
@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-    WitsmlRule witsml_rule;
+	WitsmlRule witsml_rule;
 	if (!process_witsml_rule(witsml_rule_str, witsml_rule)) {
-        std::cerr << "Error: Witsml rule processing failed" << std::endl;
+		std::cerr << "Error: Witsml rule processing failed" << std::endl;
 		return 1;
 	}
 
@@ -49,13 +49,13 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-    std::vector<std::string> rows;
-    if (!process_witsml(witsml_str, witsml_rule, ';', rows)) {
+	std::vector<std::string> rows;
+	if (!process_witsml(witsml_str, witsml_rule, ';', rows)) {
 		std::cerr << "Error: Witsml file processing failed" << std::endl;
 		return 1;
 	}
 
-    rows.insert(rows.begin(), "id;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15\n");
+	rows.insert(rows.begin(), "id;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15\n");
 	if (!Utils::SetFileContent("C:\\Temp\\result_excel.txt", rows)) {
 		std::cerr << "Error: Failed create result file" << std::endl;
 		return 1;

@@ -9,12 +9,12 @@ InputAdapter::InputAdapter():
 	parameters(0),
 	rowBuf(0),
 	errorObjIdentifier(0),
-    _badRows(0),
-    _goodRows(0),
-    _totalRows(0),
-    _listenPort(12345),
+	_badRows(0),
+	_goodRows(0),
+	_totalRows(0),
+	_listenPort(12345),
 	_csvDelimiter(';'),
-    _logMessageBody(false),
+	_logMessageBody(false),
 	_discoveryMode(false),
 	_stoppedState(false),
 	_msgQueue(64 * 1024)
@@ -32,9 +32,9 @@ bool InputAdapter::start()
 		return false;
 	}
 
-    // initialize key generator with listen port value
-    // (so different adapters will have different keys)
-    GetKeyGen(_listenPort);
+	// initialize key generator with listen port value
+	// (so different adapters will have different keys)
+	GetKeyGen(_listenPort);
 
 	_accept_thread = boost::thread(&InputAdapter::accept_fn, this);
 	return true;
@@ -43,9 +43,9 @@ bool InputAdapter::start()
 void InputAdapter::stop()
 {
 	log().log_message("InputAdapter", Log::Info, "Adapter has stopped");
-    logMessage(connectionCallBackReference, L_INFO, "Adapter has stopped");
+	logMessage(connectionCallBackReference, L_INFO, "Adapter has stopped");
 
-    _stoppedState = true;
+	_stoppedState = true;
 
 	_accept_thread.detach();
 	_tcpServ.StopServer();
@@ -55,42 +55,42 @@ void InputAdapter::stop()
 
 int InputAdapter::getColumnCount()
 {
-    return ::getColumnCount(schemaInformation);
+	return ::getColumnCount(schemaInformation);
 }
 
 void InputAdapter::setState(int st)
 {
-    ::setAdapterState(connectionCallBackReference, st);
+	::setAdapterState(connectionCallBackReference, st);
 }
 
 bool InputAdapter::discoverTables()
 {
-    return true;
+	return true;
 }
 
 bool InputAdapter::discover(std::string tableName)
 {
-    return true;
+	return true;
 }
 
 void InputAdapter::readSettings()
 {
 	// Get parameters from ESP project
-    _listenPort = (short int)::getConnectionParamInt64_t(parameters,"ListenPort");
-    _logMessageBody = ::getConnectionParamInt64_t(parameters, "LogMessageBodyEnable") != 0;
-    _csvDelimiter = ';';
+	_listenPort = (short int)::getConnectionParamInt64_t(parameters,"ListenPort");
+	_logMessageBody = ::getConnectionParamInt64_t(parameters, "LogMessageBodyEnable") != 0;
+	_csvDelimiter = ';';
 
-    std::string witsml_rules_fname = ::getConnectionParamString(parameters,"WitsmlRulesFileName");
-    
-   	std::string witsml_rule_str;
+	std::string witsml_rules_fname = ::getConnectionParamString(parameters,"WitsmlRulesFileName");
+	
+	std::string witsml_rule_str;
 	if (!Utils::GetFileContent(witsml_rules_fname.c_str(), witsml_rule_str)) {
-        log().log_message("InputAdapter", Log::Error, "Failed open file with Witsml Rules [%s]", witsml_rules_fname.c_str());
-        logMessage(connectionCallBackReference, L_ERR, "Failed open file with Witsml Rules");
+		log().log_message("InputAdapter", Log::Error, "Failed open file with Witsml Rules [%s]", witsml_rules_fname.c_str());
+		logMessage(connectionCallBackReference, L_ERR, "Failed open file with Witsml Rules");
 	}
 
 	if (!process_witsml_rule(witsml_rule_str, _witsmlRule)) {
-        log().log_message("InputAdapter", Log::Error, "Witsml Rule file processing failed [%s]", witsml_rules_fname.c_str());
-        logMessage(connectionCallBackReference, L_ERR, "Witsml Rule file processing failed");
+		log().log_message("InputAdapter", Log::Error, "Witsml Rule file processing failed [%s]", witsml_rules_fname.c_str());
+		logMessage(connectionCallBackReference, L_ERR, "Witsml Rule file processing failed");
 	}
 }
 
@@ -145,8 +145,8 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 	while ((received = client->Recv(buf, sizeof(buf) - 1)) > 0) {
 		buf[received] = '\0';
 
-        if (_logMessageBody)
-            log().log_message("InputAdapter", Log::Debug, "<MSG-CHUNK>%s</MSG-CHUNK>", buf);
+		if (_logMessageBody)
+			log().log_message("InputAdapter", Log::Debug, "<MSG-CHUNK>%s</MSG-CHUNK>", buf);
 
 		xml_buffer.AddString(buf, received);
 
@@ -158,8 +158,8 @@ void InputAdapter::client_fn(TcpConnectedClient *client)
 
 			if (!process_witsml(xml_msg, _witsmlRule, ';', witsml_rows)) {
 				log().log_message("InputAdapter", Log::Error, "Failed to parse incoming WitsML");
-                logMessage(connectionCallBackReference, L_ERR, "Failed to parse incoming WitsML");
-                
+				logMessage(connectionCallBackReference, L_ERR, "Failed to parse incoming WitsML");
+				
 				continue;
 			}
 

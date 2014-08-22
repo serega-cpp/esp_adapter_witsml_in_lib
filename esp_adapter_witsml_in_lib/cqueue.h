@@ -25,10 +25,10 @@ public:
 	size_t Size() { return m_queue.size(); }
 
 private:
-	std::queue<T *>		m_queue;
+	std::queue<T *>			m_queue;
 	size_t				m_queue_max_size;
 
-    mutable boost::mutex		m_mutex;
+	mutable boost::mutex		m_mutex;
 	boost::condition_variable	m_queue_has_data_cv;
 	boost::condition_variable	m_queue_has_free_space_cv;
 

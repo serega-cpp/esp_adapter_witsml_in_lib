@@ -6,19 +6,19 @@
 class Log
 {
 public:
-    enum Severity { Error, Info, Debug };
+	enum Severity { Error, Info, Debug };
 
-    Log(): _is_enabled(false) { _directory[0] = '\0'; }
+	Log(): _is_enabled(false) { _directory[0] = '\0'; }
 
-    bool log_message(const char *class_name, Severity severity, const char *format_str, ...);
-    void apply_settings();
-    bool is_enabled();
+	bool log_message(const char *class_name, Severity severity, const char *format_str, ...);
+	void apply_settings();
+	bool is_enabled();
 
 private:
-    bool _is_enabled;
-    char _directory[512];
+	bool _is_enabled;
+	char _directory[512];
 
-    static bool has_trailing_slash(const char *path, size_t len);
+	static bool has_trailing_slash(const char *path, size_t len);
 };
 
 Log &log();

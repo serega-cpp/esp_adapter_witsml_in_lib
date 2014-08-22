@@ -13,8 +13,8 @@ public:
 	bool Disconnect();
 
 	bool Send(const char * data, size_t size);
-    
-    bool IsConnected();
+
+	bool IsConnected();
 
 private:
 	static bool set_address(const char *hostname, unsigned short int portnum, sockaddr_in *adr);
